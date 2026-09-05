@@ -1,0 +1,53 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+.final-vehicle-choices,
+.dialog-car-toggle {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.final-vehicle-choices {
+  width: min(100%, 1020px);
+}
+
+.dialog-car-toggle strong {
+  overflow-wrap: anywhere;
+}
+
+.booking-dialog {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-height: min(760px, calc(100svh - 44px));
+  max-height: calc(100svh - 44px);
+}
+
+@media (max-width: 820px) {
+  .booking-dialog {
+    min-height: 100svh;
+    max-height: none;
+  }
+
+  .final-vehicle-choices {
+    grid-template-columns: 1fr;
+  }
+
+  .final-vehicle-choices button + button {
+    border-top: 1px solid var(--line-light);
+    border-left: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .dialog-car-toggle {
+    grid-template-columns: 1fr;
+  }
+
+  .dialog-car-toggle button {
+    min-height: 58px;
+  }
+
+  .dialog-car-toggle button + button {
+    border-top: 1px solid var(--line-dark);
+    border-left: 0;
+  }
+}
