@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Syne:wght@500;600;700;800&display=swap');
 
 .final-vehicle-choices,
 .dialog-car-toggle {
@@ -6,7 +6,7 @@
 }
 
 .final-vehicle-choices {
-  width: min(100%, 1020px);
+  width: min(100%, 980px);
 }
 
 .dialog-car-toggle strong {
@@ -17,8 +17,8 @@
   margin: 0;
   padding: 0;
   border: 0;
-  min-height: min(760px, calc(100svh - 44px));
-  max-height: calc(100svh - 44px);
+  min-height: min(720px, calc(100svh - 40px));
+  max-height: calc(100svh - 40px);
 }
 
 @media (max-width: 820px) {
