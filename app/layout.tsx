@@ -34,7 +34,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#050606',
+  themeColor: '#141210',
 };
 
 export default function RootLayout({
@@ -44,6 +44,17 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://static.sketchfab.com" />
+        <link rel="preconnect" href="https://media.sketchfab.com" />
+        <link rel="dns-prefetch" href="https://sketchfab.com" />
+        <link
+          rel="preload"
+          href="https://static.sketchfab.com/api/sketchfab-viewer-1.12.1.js"
+          as="script"
+        />
+        <link rel="preload" href="/fleet-corvette.jpg" as="image" />
+      </head>
       <body>{children}</body>
     </html>
   );

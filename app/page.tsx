@@ -17,6 +17,7 @@ type Vehicle = {
   model: string;
   description: string;
   tagline: string;
+  poster: string;
   features: string[];
   specs: Array<{ value: string; label: string }>;
   model3d: {
@@ -28,8 +29,6 @@ type Vehicle = {
     licenseUrl: string;
     heroScale: number;
     heroScaleMobile: number;
-    miniatureScale: number;
-    miniatureScaleMobile: number;
   };
 };
 
@@ -74,11 +73,12 @@ const vehicles: Vehicle[] = [
   {
     id: 'corvette',
     number: '01',
-    eyebrow: '6.2L V8 / RWD',
+    eyebrow: '6.2L V8 · RWD',
     maker: 'Chevrolet',
     model: 'Corvette C8 2LT',
     description:
-      'The C8 2LT has a mid-mounted 6.2-liter V8, 490 horsepower, rear-wheel drive, an eight-speed dual-clutch transmission, and a two-seat cockpit.',
+      'Mid-engine 6.2-liter V8, 490 horsepower, rear-wheel drive, eight-speed dual-clutch, and a focused two-seat cockpit.',
+    poster: '/fleet-corvette.jpg',
     model3d: {
       uid: 'a3240484fa9d481abb2c5b6690c2595b',
       title: 'Chevrolet Corvette C8 Stingray',
@@ -89,16 +89,14 @@ const vehicles: Vehicle[] = [
       licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
       heroScale: 0.92,
       heroScaleMobile: 1.02,
-      miniatureScale: 0.75,
-      miniatureScaleMobile: 0.8,
     },
     specs: [
-      { value: '490', label: 'HORSEPOWER' },
-      { value: '2.9s†', label: '0-60 / Z51' },
-      { value: 'V8', label: 'MID-ENGINE' },
-      { value: '2LT', label: 'PREMIUM TRIM' },
+      { value: '490', label: 'Horsepower' },
+      { value: '2.9s†', label: '0–60 / Z51' },
+      { value: 'V8', label: 'Mid-engine' },
+      { value: '2LT', label: 'Trim' },
     ],
-    tagline: '490 HP / MID-ENGINE V8',
+    tagline: '490 hp mid-engine V8',
     features: [
       'Mid-engine layout',
       'Eight-speed DCT',
@@ -109,11 +107,12 @@ const vehicles: Vehicle[] = [
   {
     id: 'bmw',
     number: '02',
-    eyebrow: '3.0L TURBO I6 / RWD',
+    eyebrow: '3.0L turbo I6 · RWD',
     maker: 'BMW',
     model: '840i',
     description:
-      'The 840i pairs a 335-horsepower BMW TwinPower Turbo inline-six with rear-wheel drive, four seats, and grand-touring comfort.',
+      '335-horsepower TwinPower Turbo inline-six, rear-wheel drive, four seats, and grand-touring comfort for longer Bay Area drives.',
+    poster: '/fleet-bmw.jpg',
     model3d: {
       uid: 'bca2cec53d0341b3b2593030ed78b8c1',
       title: 'Bmw 8 car',
@@ -124,16 +123,14 @@ const vehicles: Vehicle[] = [
       licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
       heroScale: 1.08,
       heroScaleMobile: 1.18,
-      miniatureScale: 0.78,
-      miniatureScaleMobile: 0.82,
     },
     specs: [
-      { value: '335', label: 'HORSEPOWER' },
-      { value: '4.7s*', label: '0-60 MPH' },
-      { value: 'RWD', label: 'REAR-WHEEL' },
-      { value: '4', label: 'SEATS' },
+      { value: '335', label: 'Horsepower' },
+      { value: '4.7s*', label: '0–60 mph' },
+      { value: 'RWD', label: 'Drive' },
+      { value: '4', label: 'Seats' },
     ],
-    tagline: '335 HP / TURBO INLINE-6',
+    tagline: '335 hp turbo inline-six',
     features: [
       'TwinPower Turbo inline-six',
       'Rear-wheel drive',
@@ -144,11 +141,12 @@ const vehicles: Vehicle[] = [
   {
     id: 'tesla',
     number: '03',
-    eyebrow: 'TRI-MOTOR / AWD',
+    eyebrow: 'Tri-motor · AWD',
     maker: 'Tesla',
     model: 'Model S Plaid',
     description:
-      'The Model S Plaid has 1,020 horsepower, tri-motor all-wheel drive, five seats, and quiet electric operation.',
+      '1,020 horsepower, tri-motor all-wheel drive, five seats, and quiet electric performance for city or highway miles.',
+    poster: '/fleet-tesla.jpg',
     model3d: {
       uid: 'aec912ed367b4aebacc8676922f42beb',
       title: 'Tesla Model S Plaid 2023',
@@ -159,16 +157,14 @@ const vehicles: Vehicle[] = [
       licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
       heroScale: 1.14,
       heroScaleMobile: 1.6,
-      miniatureScale: 0.85,
-      miniatureScaleMobile: 0.78,
     },
     specs: [
-      { value: '1,020', label: 'HORSEPOWER' },
-      { value: '1.99s*', label: '0-60 MPH' },
-      { value: 'AWD', label: 'TRI-MOTOR' },
-      { value: '5', label: 'SEATS' },
+      { value: '1,020', label: 'Horsepower' },
+      { value: '1.99s*', label: '0–60 mph' },
+      { value: 'AWD', label: 'Tri-motor' },
+      { value: '5', label: 'Seats' },
     ],
-    tagline: '1,020 HP / TRI-MOTOR AWD',
+    tagline: '1,020 hp tri-motor AWD',
     features: [
       'Tri-motor performance',
       'All-wheel drive',
@@ -181,7 +177,6 @@ const vehicles: Vehicle[] = [
 const EASE = [0.22, 1, 0.36, 1] as const;
 const SKETCHFAB_SCRIPT =
   'https://static.sketchfab.com/api/sketchfab-viewer-1.12.1.js';
-const GARAGE_FILM = '/garage-loading-higgsfield.mp4';
 const BOOKING_ENDPOINT = 'https://formspree.io/f/myeywjdl';
 const EMBED_ALLOWED_ORIGINS = new Set([
   'https://dory-rust-8ts3.squarespace.com',
@@ -191,6 +186,9 @@ const EMBED_ALLOWED_ORIGINS = new Set([
 let sketchfabPromise: Promise<SketchfabConstructor> | undefined;
 
 function loadSketchfab() {
+  if (typeof window === 'undefined') {
+    return Promise.reject(new Error('Sketchfab is browser-only.'));
+  }
   if (window.Sketchfab) return Promise.resolve(window.Sketchfab);
   if (sketchfabPromise) return sketchfabPromise;
 
@@ -206,6 +204,10 @@ function loadSketchfab() {
       reject(new Error('The 3D viewer could not load.'));
 
     if (existing) {
+      if (window.Sketchfab) {
+        resolve(window.Sketchfab);
+        return;
+      }
       existing.addEventListener('load', handleLoad, { once: true });
       existing.addEventListener('error', handleError, { once: true });
       return;
@@ -228,132 +230,9 @@ function loadSketchfab() {
 function Logo() {
   return (
     <a className="logo" href="#top" aria-label="JJ Autos home">
-      <span className="logo-crest" aria-hidden="true">
-        <i />
-        <strong>JJ</strong>
-        <i />
-      </span>
-      <span className="logo-name">JJ AUTOS</span>
+      <span className="logo-mark">JJ Autos</span>
+      <span className="logo-sub">Cupertino</span>
     </a>
-  );
-}
-
-function GarageLoader({ ready }: { ready: boolean }) {
-  const reduceMotion = Boolean(useReducedMotion());
-  const [minimumElapsed, setMinimumElapsed] = useState(false);
-  const [visible, setVisible] = useState(true);
-  const cleanupRef = useRef<null | (() => void)>(null);
-
-  const restorePage = useCallback(() => {
-    cleanupRef.current?.();
-    cleanupRef.current = null;
-  }, []);
-
-  useEffect(() => {
-    document.documentElement.classList.add('garage-loading');
-    document.body.classList.add('garage-loading');
-    const elements = Array.from(
-      document.querySelectorAll<HTMLElement>('.site-header, main, footer'),
-    );
-    const previous = elements.map((element) => ({
-      element,
-      ariaHidden: element.getAttribute('aria-hidden'),
-      inert: element.inert,
-    }));
-
-    elements.forEach((element) => {
-      element.inert = true;
-      element.setAttribute('aria-hidden', 'true');
-    });
-    cleanupRef.current = () => {
-      document.documentElement.classList.remove('garage-loading');
-      document.body.classList.remove('garage-loading');
-      previous.forEach(({ element, ariaHidden, inert }) => {
-        element.inert = inert;
-        if (ariaHidden === null) element.removeAttribute('aria-hidden');
-        else element.setAttribute('aria-hidden', ariaHidden);
-      });
-    };
-    return restorePage;
-  }, [restorePage]);
-
-  useEffect(() => {
-    const minimumTimer = window.setTimeout(
-      () => setMinimumElapsed(true),
-      reduceMotion ? 250 : 2400,
-    );
-    const failsafeTimer = window.setTimeout(() => setVisible(false), 9000);
-    return () => {
-      window.clearTimeout(minimumTimer);
-      window.clearTimeout(failsafeTimer);
-    };
-  }, [reduceMotion]);
-
-  useEffect(() => {
-    if (!ready || !minimumElapsed) return;
-    const timer = window.setTimeout(
-      () => setVisible(false),
-      reduceMotion ? 0 : 300,
-    );
-    return () => window.clearTimeout(timer);
-  }, [minimumElapsed, ready, reduceMotion]);
-
-  return (
-    <AnimatePresence onExitComplete={restorePage}>
-      {visible && (
-        <motion.output
-          className={`garage-loader ${ready ? 'garage-loader--ready' : ''}`}
-          aria-label="JJ Autos garage loading"
-          initial={false}
-          exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: '-100%' }}
-          transition={{ duration: reduceMotion ? 0.1 : 0.85, ease: EASE }}
-        >
-          {!reduceMotion && (
-            <video
-              className="garage-loader-video"
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="auto"
-              aria-hidden="true"
-              tabIndex={-1}
-            >
-              <source src={GARAGE_FILM} type="video/mp4" />
-            </video>
-          )}
-          <div className="garage-loader-header">
-            <span>JJ AUTOS / CUPERTINO</span>
-            <span>{ready ? 'VEHICLE READY' : 'INITIALIZING 3D GARAGE'}</span>
-          </div>
-          <div className="garage-loader-center">
-            <div className="garage-loader-mark" aria-hidden="true">
-              <i />
-              <strong>JJ</strong>
-              <i />
-            </div>
-            <strong className="garage-loader-title">
-              GARAGE
-              <br />
-              LOADING
-            </strong>
-            <div className="garage-loader-progress" aria-hidden="true">
-              <span />
-            </div>
-            <div className="garage-loader-readout">
-              <span>VEHICLE</span>
-              <span>LIGHT</span>
-              <span>CONTROLS</span>
-            </div>
-          </div>
-          <div className="garage-loader-floor" aria-hidden="true">
-            {Array.from({ length: 7 }, (_, index) => (
-              <i key={index} />
-            ))}
-          </div>
-        </motion.output>
-      )}
-    </AnimatePresence>
   );
 }
 
@@ -490,21 +369,21 @@ function Header({ onBook }: { onBook: () => void }) {
             id="site-menu"
             ref={menuRef}
             aria-label="Primary navigation"
-            initial={{ opacity: 0, clipPath: 'inset(0 0 100% 0)' }}
-            animate={{ opacity: 1, clipPath: 'inset(0 0 0 0)' }}
-            exit={{ opacity: 0, clipPath: 'inset(0 0 100% 0)' }}
-            transition={{ duration: 0.55, ease: EASE }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.28, ease: EASE }}
           >
-            <span className="site-menu-label">JJ AUTOS / CUPERTINO</span>
+            <span className="site-menu-label">Cupertino, California</span>
             <div className="site-menu-links">
               <a href="#fleet" onClick={closeMenu}>
-                <span>01</span>The fleet
+                The fleet
               </a>
               <a href="#experience" onClick={closeMenu}>
-                <span>02</span>Rental process
+                How it works
               </a>
               <a href="#story" onClick={closeMenu}>
-                <span>03</span>About JJ Autos
+                About
               </a>
             </div>
             <div className="site-menu-footer">
@@ -522,62 +401,80 @@ function Header({ onBook }: { onBook: () => void }) {
 
 function ModelViewer({
   vehicle,
+  active,
+  enabled,
   onReady,
 }: {
   vehicle: Vehicle;
-  onReady: () => void;
+  active: boolean;
+  enabled: boolean;
+  onReady?: () => void;
 }) {
   const reduceMotion = Boolean(useReducedMotion());
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const apiRef = useRef<ViewerApi | null>(null);
   const cameraRef = useRef<Camera | null>(null);
+  const onReadyRef = useRef(onReady);
+  const activeRef = useRef(active);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>(
     'loading',
   );
 
   useEffect(() => {
-    let active = true;
+    onReadyRef.current = onReady;
+  }, [onReady]);
+
+  useEffect(() => {
+    activeRef.current = active;
+  }, [active]);
+
+  useEffect(() => {
+    if (!enabled) return;
+    let activeEffect = true;
     const mobile = window.matchMedia('(max-width: 640px)').matches;
     const timeout = window.setTimeout(() => {
-      if (active) {
+      if (activeEffect) {
         setStatus('error');
-        onReady();
+        onReadyRef.current?.();
       }
-    }, 15_000);
+    }, 12_000);
 
     loadSketchfab()
       .then((Sketchfab) => {
-        if (!active || !iframeRef.current) return;
+        if (!activeEffect || !iframeRef.current) return;
         new Sketchfab('1.12.1', iframeRef.current).init(vehicle.model3d.uid, {
           autostart: 1,
-          autospin: reduceMotion ? 0 : 0.06,
+          autospin: 0,
           camera: 0,
           dnt: 1,
-          max_texture_size: mobile ? 1024 : 2048,
+          max_texture_size: mobile ? 768 : 1024,
+          preload: 1,
           scrollwheel: 0,
           transparent: 1,
           ui_annotations: 0,
-          ui_controls: 1,
-          ui_fullscreen: 1,
-          ui_help: 1,
+          ui_controls: 0,
+          ui_fullscreen: 0,
+          ui_general_controls: 0,
+          ui_help: 0,
           ui_hint: 0,
-          ui_infos: 1,
+          ui_infos: 0,
           ui_inspector: 0,
-          ui_settings: 1,
+          ui_settings: 0,
           ui_stop: 0,
           ui_vr: 0,
+          ui_watermark: 0,
           success: (api) => {
-            if (!active) {
+            if (!activeEffect) {
               api.stop();
               return;
             }
             apiRef.current = api;
             api.addEventListener('viewerready', () => {
-              if (!active) return;
+              if (!activeEffect) return;
               api.setFov(mobile ? 42 : 32);
               api.getCameraLookAt((error, camera) => {
                 window.clearTimeout(timeout);
-                if (!active) return;
+                if (!activeEffect) return;
                 if (!error && camera) {
                   const scale = mobile
                     ? vehicle.model3d.heroScaleMobile
@@ -591,101 +488,122 @@ function ModelViewer({
                   api.setCameraLookAt(position, camera.target, 0);
                 }
                 setStatus('ready');
-                onReady();
+                onReadyRef.current?.();
+                if (!activeRef.current) api.stop();
               });
             });
             api.start();
           },
           error: () => {
             window.clearTimeout(timeout);
-            if (active) {
+            if (activeEffect) {
               setStatus('error');
-              onReady();
+              onReadyRef.current?.();
             }
           },
         });
       })
       .catch(() => {
         window.clearTimeout(timeout);
-        if (active) {
+        if (activeEffect) {
           setStatus('error');
-          onReady();
+          onReadyRef.current?.();
         }
       });
 
     return () => {
-      active = false;
+      activeEffect = false;
       window.clearTimeout(timeout);
       apiRef.current?.stop();
       apiRef.current = null;
       cameraRef.current = null;
     };
-  }, [onReady, reduceMotion, vehicle]);
+  }, [enabled, vehicle]);
+
+  useEffect(() => {
+    const api = apiRef.current;
+    if (!api || status !== 'ready') return;
+    if (active) {
+      api.start();
+      if (!reduceMotion) {
+        // Soft autospin only while visible
+        try {
+          (
+            api as ViewerApi & { setAutospin?: (value: number) => void }
+          ).setAutospin?.(0.04);
+        } catch {
+          /* optional API */
+        }
+      }
+    } else {
+      api.stop();
+    }
+  }, [active, reduceMotion, status]);
 
   return (
-    <div className={`model-viewer model-viewer--${status}`}>
-      {!reduceMotion && (
-        <video
-          className="model-garage-film"
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          aria-hidden="true"
-          tabIndex={-1}
-        >
-          <source src={GARAGE_FILM} type="video/mp4" />
-        </video>
+    <div
+      className={`model-viewer model-viewer--${status}`}
+      aria-hidden={!active}
+    >
+      <div
+        className="model-poster"
+        style={{ backgroundImage: `url(${vehicle.poster})` }}
+        aria-hidden="true"
+      />
+      {enabled && (
+        <div className="model-viewer-frame-wrap">
+          <iframe
+            ref={iframeRef}
+            className="model-viewer-frame"
+            title={`Interactive 3D model of ${vehicle.maker} ${vehicle.model}`}
+            allow="autoplay; fullscreen; xr-spatial-tracking"
+            loading={active ? 'eager' : 'lazy'}
+          />
+        </div>
       )}
-      <div className="model-viewer-frame-wrap">
-        <iframe
-          ref={iframeRef}
-          className="model-viewer-frame"
-          title={`Interactive 3D model of ${vehicle.maker} ${vehicle.model}`}
-          allow="autoplay; fullscreen"
-        />
-      </div>
-      <output className="model-viewer-status" aria-live="polite">
-        {status === 'loading' && (
-          <>
-            <span>LOADING 3D MODEL</span>
-            <i aria-hidden="true" />
-          </>
-        )}
-        {status === 'ready' && <span>DRAG TO ROTATE / PINCH TO ZOOM</span>}
-        {status === 'error' && (
-          <span>3D MODEL UNAVAILABLE / RELOAD TO TRY AGAIN</span>
-        )}
-      </output>
-      {status === 'ready' && (
-        <button
-          className="model-viewer-reset"
-          type="button"
-          onClick={() => {
-            const camera = cameraRef.current;
-            if (camera)
-              apiRef.current?.setCameraLookAt(
-                camera.position,
-                camera.target,
-                0.7,
-              );
-            else apiRef.current?.recenterCamera();
-          }}
-        >
-          Reset view
-        </button>
+      {active && (
+        <>
+          <output className="model-viewer-status" aria-live="polite">
+            {status === 'loading' && <span>Loading interactive 3D…</span>}
+            {status === 'ready' && <span>Drag to turn · Pinch to zoom</span>}
+            {status === 'error' && (
+              <span>3D unavailable — photo preview shown</span>
+            )}
+          </output>
+          {status === 'ready' && (
+            <button
+              className="model-viewer-reset"
+              type="button"
+              onClick={() => {
+                const camera = cameraRef.current;
+                if (camera)
+                  apiRef.current?.setCameraLookAt(
+                    camera.position,
+                    camera.target,
+                    0.55,
+                  );
+                else apiRef.current?.recenterCamera();
+              }}
+            >
+              Reset view
+            </button>
+          )}
+          <p className="model-viewer-credit">
+            <span>Representative 3D · </span>
+            <a href={vehicle.model3d.source} target="_blank" rel="noreferrer">
+              {vehicle.model3d.title} by {vehicle.model3d.author}
+            </a>
+            <span> · </span>
+            <a
+              href={vehicle.model3d.licenseUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {vehicle.model3d.license}
+            </a>
+          </p>
+        </>
       )}
-      <p className="model-viewer-credit">
-        <span>REPRESENTATIVE 3D / </span>
-        <a href={vehicle.model3d.source} target="_blank" rel="noreferrer">
-          {vehicle.model3d.title} BY {vehicle.model3d.author}
-        </a>
-        <span> / </span>
-        <a href={vehicle.model3d.licenseUrl} target="_blank" rel="noreferrer">
-          {vehicle.model3d.license}
-        </a>
-      </p>
     </div>
   );
 }
@@ -694,56 +612,60 @@ function GarageHero({
   activeVehicle,
   onSelect,
   onBook,
-  onModelReady,
 }: {
   activeVehicle: Vehicle;
   onSelect: (vehicleId: string) => void;
   onBook: () => void;
-  onModelReady: () => void;
 }) {
   const reduceMotion = Boolean(useReducedMotion());
-  const [direction, setDirection] = useState(1);
+  const [warmAll, setWarmAll] = useState(false);
+  const [openedIds, setOpenedIds] = useState<string[]>([]);
   const vehicle = activeVehicle;
   const currentIndex = vehicles.findIndex((item) => item.id === vehicle.id);
 
-  const selectVehicle = (id: string, nextDirection = 1) => {
-    if (id !== vehicle.id) {
-      setDirection(nextDirection);
-      onSelect(id);
-    }
+  useEffect(() => {
+    // Warm the other models after first paint so they do not fight for bandwidth.
+    const timer = window.setTimeout(() => setWarmAll(true), 1600);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  const isEnabled = (id: string) =>
+    warmAll || id === vehicle.id || openedIds.includes(id);
+
+  const selectVehicle = (id: string) => {
+    setOpenedIds((current) =>
+      current.includes(id) ? current : [...current, id],
+    );
+    if (id !== vehicle.id) onSelect(id);
   };
   const step = (amount: number) => {
     const index = (currentIndex + amount + vehicles.length) % vehicles.length;
-    selectVehicle(vehicles[index].id, amount);
+    selectVehicle(vehicles[index].id);
   };
 
   return (
     <section
       className={`model-stage model-stage--${vehicle.id}`}
       id="top"
-      aria-label={`Interactive vehicle showroom. ${vehicle.maker} ${vehicle.model} selected. Drag the vehicle to rotate it. Use left and right arrow keys to switch.`}
+      aria-label={`Interactive vehicle showroom. ${vehicle.maker} ${vehicle.model} selected. Drag the vehicle to rotate it.`}
     >
-      <AnimatePresence initial={false} custom={direction}>
-        <motion.div
-          className="model-render"
-          key={vehicle.id}
-          custom={direction}
-          initial={
-            reduceMotion
-              ? undefined
-              : { opacity: 0, x: direction * 80, scale: 1.025 }
-          }
-          animate={{ opacity: 1, x: 0, scale: 1 }}
-          exit={
-            reduceMotion
-              ? undefined
-              : { opacity: 0, x: direction * -70, scale: 1.015 }
-          }
-          transition={{ duration: 0.78, ease: EASE }}
-        >
-          <ModelViewer vehicle={vehicle} onReady={onModelReady} />
-        </motion.div>
-      </AnimatePresence>
+      <div className="model-render">
+        {vehicles.map((item) => {
+          const isActive = item.id === vehicle.id;
+          return (
+            <div
+              key={item.id}
+              className={`model-slot ${isActive ? 'is-active' : 'is-idle'}`}
+            >
+              <ModelViewer
+                vehicle={item}
+                active={isActive}
+                enabled={isEnabled(item.id)}
+              />
+            </div>
+          );
+        })}
+      </div>
       <button
         className="model-arrow model-arrow--previous"
         type="button"
@@ -761,17 +683,20 @@ function GarageHero({
         <span aria-hidden="true">→</span>
       </button>
       <div className="model-stage-copy">
+        <h1 className="model-brand">JJ Autos</h1>
         <AnimatePresence mode="wait">
           <motion.div
-            className="model-title"
+            className="model-vehicle"
             key={vehicle.id}
-            initial={reduceMotion ? undefined : { opacity: 0, y: 22 }}
+            initial={reduceMotion ? undefined : { opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={reduceMotion ? undefined : { opacity: 0, y: -16 }}
-            transition={{ duration: 0.48, ease: EASE }}
+            exit={reduceMotion ? undefined : { opacity: 0, y: -8 }}
+            transition={{ duration: 0.35, ease: EASE }}
           >
             <span>{vehicle.tagline}</span>
-            <h1>{vehicle.model}</h1>
+            <strong>
+              {vehicle.maker} {vehicle.model}
+            </strong>
           </motion.div>
         </AnimatePresence>
         <div className="model-stage-actions">
@@ -783,202 +708,28 @@ function GarageHero({
             Check availability
           </button>
           <a className="stage-action stage-action--secondary" href="#fleet">
-            View fleet
+            Browse fleet
           </a>
         </div>
         <div className="model-pagination" aria-label="Choose a vehicle">
-          {vehicles.map((item, index) => (
+          {vehicles.map((item) => (
             <button
               key={item.id}
               type="button"
               className={item.id === vehicle.id ? 'active' : ''}
               aria-label={`Select ${item.maker} ${item.model}`}
               aria-pressed={item.id === vehicle.id}
-              onClick={() =>
-                selectVehicle(item.id, index >= currentIndex ? 1 : -1)
-              }
+              onClick={() => selectVehicle(item.id)}
             >
               <span />
             </button>
           ))}
         </div>
       </div>
-      <span className="model-stage-location">
-        JJ AUTOS&nbsp;&nbsp; / &nbsp;&nbsp;CUPERTINO, CALIFORNIA
-      </span>
       <p className="sr-only" aria-live="polite">
         Selected {vehicle.maker} {vehicle.model}.
       </p>
     </section>
-  );
-}
-
-function MiniModelViewer({ vehicle }: { vehicle: Vehicle }) {
-  const reduceMotion = Boolean(useReducedMotion());
-  const hostRef = useRef<HTMLDivElement>(null);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-  const apiRef = useRef<ViewerApi | null>(null);
-  const intersectingRef = useRef(false);
-  const [intersecting, setIntersecting] = useState(false);
-  const [requested, setRequested] = useState(false);
-  const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>(
-    'idle',
-  );
-
-  useEffect(() => {
-    const element = hostRef.current;
-    if (!element) return;
-    const supportsIntersectionObserver =
-      typeof window.IntersectionObserver === 'function';
-    if (!supportsIntersectionObserver) {
-      intersectingRef.current = true;
-      const timer = window.setTimeout(() => {
-        setIntersecting(true);
-        setRequested(true);
-        setStatus('loading');
-      }, 0);
-      return () => window.clearTimeout(timer);
-    }
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        intersectingRef.current = entry.isIntersecting;
-        setIntersecting(entry.isIntersecting);
-        if (entry.isIntersecting) {
-          setRequested(true);
-          setStatus((current) => (current === 'idle' ? 'loading' : current));
-          apiRef.current?.start();
-        } else {
-          apiRef.current?.stop();
-        }
-      },
-      { rootMargin: '360px 0px' },
-    );
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    if (!requested) return;
-    let active = true;
-    const mobile = window.matchMedia('(max-width: 640px)').matches;
-    const timeout = window.setTimeout(() => {
-      if (active) setStatus('error');
-    }, 15_000);
-    loadSketchfab()
-      .then((Sketchfab) => {
-        if (!active || !iframeRef.current) return;
-        new Sketchfab('1.12.1', iframeRef.current).init(vehicle.model3d.uid, {
-          autostart: 1,
-          autospin: reduceMotion ? 0 : 0.08,
-          camera: 0,
-          dnt: 1,
-          max_texture_size: 1024,
-          scrollwheel: 0,
-          transparent: 1,
-          ui_annotations: 0,
-          ui_controls: 1,
-          ui_fullscreen: 1,
-          ui_help: 0,
-          ui_hint: 0,
-          ui_infos: 1,
-          ui_inspector: 0,
-          ui_settings: 0,
-          ui_stop: 0,
-          ui_vr: 0,
-          success: (api) => {
-            if (!active) {
-              api.stop();
-              return;
-            }
-            apiRef.current = api;
-            api.addEventListener('viewerready', () => {
-              if (!active) return;
-              api.setFov(mobile ? 32 : 28);
-              api.getCameraLookAt((error, camera) => {
-                if (!active) return;
-                window.clearTimeout(timeout);
-                if (!error && camera) {
-                  const scale = mobile
-                    ? vehicle.model3d.miniatureScaleMobile
-                    : vehicle.model3d.miniatureScale;
-                  const position = camera.position.map(
-                    (value, index) =>
-                      camera.target[index] +
-                      (value - camera.target[index]) * scale,
-                  );
-                  api.setCameraLookAt(position, camera.target, 0);
-                }
-                setStatus('ready');
-              });
-            });
-            api.start();
-            if (!intersectingRef.current) {
-              window.requestAnimationFrame(() => {
-                if (active && !intersectingRef.current) api.stop();
-              });
-            }
-          },
-          error: () => {
-            window.clearTimeout(timeout);
-            if (active) setStatus('error');
-          },
-        });
-      })
-      .catch(() => {
-        window.clearTimeout(timeout);
-        if (active) setStatus('error');
-      });
-
-    return () => {
-      active = false;
-      window.clearTimeout(timeout);
-      apiRef.current?.stop();
-      apiRef.current = null;
-    };
-  }, [reduceMotion, requested, vehicle]);
-
-  return (
-    <div
-      className={`mini-model-viewer mini-model-viewer--${status}`}
-      ref={hostRef}
-    >
-      {requested && intersecting && !reduceMotion && (
-        <video
-          className="mini-model-film"
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          aria-hidden="true"
-          tabIndex={-1}
-        >
-          <source src={GARAGE_FILM} type="video/mp4" />
-        </video>
-      )}
-      <div className="mini-model-frame-wrap">
-        {requested && (
-          <iframe
-            ref={iframeRef}
-            className="mini-model-frame"
-            title={`Mini interactive 3D model of ${vehicle.maker} ${vehicle.model}`}
-            allow="autoplay; fullscreen"
-          />
-        )}
-      </div>
-      <output className="mini-model-status" aria-live="polite">
-        {status === 'idle' && <span>3D MODEL STANDBY</span>}
-        {status === 'loading' && (
-          <>
-            <span>LOADING MINIATURE</span>
-            <i aria-hidden="true" />
-          </>
-        )}
-        {status === 'error' && (
-          <span>3D PREVIEW UNAVAILABLE / OPEN FULL GARAGE</span>
-        )}
-      </output>
-    </div>
   );
 }
 
@@ -993,35 +744,36 @@ function FleetCard({
 }) {
   return (
     <article className={`fleet-card fleet-card--${vehicle.id}`}>
-      <div className="fleet-card-console">
-        <div className="fleet-card-console-head">
-          <span>LIVE MINIATURE / {vehicle.number}</span>
-          <span>DRAG / ROTATE</span>
-        </div>
-        <MiniModelViewer vehicle={vehicle} />
-        <div className="fleet-card-console-footer">
-          <p>
-            <span>REPRESENTATIVE 3D / </span>
-            <a href={vehicle.model3d.source} target="_blank" rel="noreferrer">
-              {vehicle.model3d.author}
-            </a>
-            <span> / </span>
-            <a
-              href={vehicle.model3d.licenseUrl}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {vehicle.model3d.license}
-            </a>
-          </p>
-          <button
-            type="button"
-            onClick={() => onView3d(vehicle.id)}
-            aria-label={`Open ${vehicle.maker} ${vehicle.model} in the full 3D garage`}
-          >
-            OPEN FULL GARAGE <b aria-hidden="true">↗</b>
-          </button>
-        </div>
+      <div className="fleet-media">
+        {/* Static local posters; next/image is unnecessary for these small assets. */}
+        {/* oxlint-disable-next-line nextjs/no-img-element */}
+        <img
+          className="fleet-media-image"
+          src={vehicle.poster}
+          alt={`${vehicle.maker} ${vehicle.model}`}
+          width={720}
+          height={405}
+          loading="lazy"
+          decoding="async"
+        />
+        <p className="fleet-media-credit">
+          <a href={vehicle.model3d.source} target="_blank" rel="noreferrer">
+            {vehicle.model3d.title}
+          </a>
+          {' by '}
+          {vehicle.model3d.author}
+          {' · '}
+          <a href={vehicle.model3d.licenseUrl} target="_blank" rel="noreferrer">
+            {vehicle.model3d.license}
+          </a>
+        </p>
+        <button
+          className="fleet-media-action"
+          type="button"
+          onClick={() => onView3d(vehicle.id)}
+        >
+          Open in 3D
+        </button>
       </div>
       <div className="fleet-card-body">
         <div className="vehicle-title-row">
@@ -1032,9 +784,9 @@ function FleetCard({
             </h3>
           </div>
           <div className="vehicle-rate">
-            <small>PRICING</small>
-            <strong>QUOTE</strong>
-            <span>WITH DATES</span>
+            <small>Pricing</small>
+            <strong>Quote</strong>
+            <span>with your dates</span>
           </div>
         </div>
         <p>{vehicle.description}</p>
@@ -1076,16 +828,15 @@ function Fleet({
       <div className="section-heading">
         <div>
           <h2>
-            Choose one of
+            Three cars.
             <br />
-            three vehicles.
+            One garage.
           </h2>
         </div>
         <div>
           <p>
-            The Corvette C8 2LT is a two-seat, mid-engine V8 sports car. The BMW
-            840i is a four-seat turbocharged grand tourer. The Model S Plaid is
-            a five-seat electric sedan.
+            A mid-engine Corvette, a four-seat BMW grand tourer, and a tri-motor
+            Model S Plaid — prepared and handed off by the owner.
           </p>
         </div>
       </div>
@@ -1115,42 +866,36 @@ function Experience({ onBook }: { onBook: () => void }) {
   const moments = [
     {
       number: '01',
-      label: 'SEND YOUR DATES',
-      title: 'Request a vehicle.',
-      copy: 'Send your dates and vehicle choice. JJ Autos replies with availability and a quote.',
+      label: 'Send dates',
+      title: 'Request a car',
+      copy: 'Choose a vehicle and send your dates. JJ Autos replies with availability and a quote.',
     },
     {
       number: '02',
-      label: 'VEHICLE PREPARATION',
-      title: 'JJ Autos prepares the car.',
-      copy: 'The team cleans, inspects, charges or fuels, and prepares the selected vehicle before handoff.',
+      label: 'Preparation',
+      title: 'We ready the car',
+      copy: 'Cleaning, inspection, fuel or charge, and a final walkaround before handoff.',
     },
     {
       number: '03',
-      label: 'PICKUP OR DELIVERY',
-      title: 'Receive the vehicle.',
-      copy: 'Pick up in Cupertino or request Bay Area delivery. JJ Autos reviews the vehicle controls with you at handoff.',
+      label: 'Handoff',
+      title: 'Pickup or delivery',
+      copy: 'Meet in Cupertino or request Bay Area delivery. Controls are reviewed with you on arrival.',
     },
   ];
 
   return (
     <section className="experience" id="experience">
-      <div className="experience-banner" aria-hidden="true">
-        <span>OWNER-MANAGED BOOKING AND HANDOFF.</span>
-        <span className="banner-outline">
-          CUPERTINO PICKUP OR BAY AREA DELIVERY.
-        </span>
-      </div>
       <div className="experience-inner section-pad">
         <div className="experience-intro">
           <h2>
-            How rental
+            How rentals
             <br />
-            requests work.
+            work here.
           </h2>
           <p>
-            JJ Autos confirms the dates, prepares the vehicle, and arranges
-            pickup or delivery.
+            No fleet desk. The same people who own the cars confirm the dates,
+            prepare the vehicle, and meet you at handoff.
           </p>
         </div>
         <ol className="moment-list">
@@ -1184,33 +929,33 @@ function Story() {
   return (
     <section className="story section-pad" id="story">
       <div className="story-topline">
-        <span>JJ AUTOS / EST. 2024</span>
-        <span>CUPERTINO, CALIFORNIA</span>
+        <span>Est. 2024</span>
+        <span>Cupertino, California</span>
       </div>
       <div className="story-grid">
         <div className="story-title">
           <h2>
-            Owner-operated
+            Small fleet.
             <br />
-            since 2024.
+            Direct contact.
           </h2>
         </div>
         <div className="story-copy">
           <p className="story-lead">
-            JJ Autos began renting performance vehicles in 2024. The company is
-            based in Cupertino and manages a three-car fleet.
+            JJ Autos started renting performance cars in 2024 from Cupertino —
+            three vehicles, prepared by the people who own them.
           </p>
           <p>
-            The owner and team manage cleaning, maintenance, service, and
-            delivery for each rental. Pickup is available in Cupertino; Bay Area
-            delivery can be requested.
+            Cleaning, maintenance, service, and delivery stay in-house. Pickup
+            is available locally; Bay Area delivery can be requested with your
+            dates.
           </p>
           <div className="story-signature">
             <span className="signature-mark">JJ</span>
             <span>
-              FOUNDER &amp; OWNER
+              Founder &amp; owner
               <br />
-              JJ AUTOS
+              JJ Autos
             </span>
           </div>
         </div>
@@ -1220,22 +965,21 @@ function Story() {
           <span>01</span>
           <strong>One point of contact</strong>
           <p>
-            JJ Autos manages each request from the first question through
-            vehicle return.
+            The same team handles the first question through vehicle return.
           </p>
         </div>
         <div>
           <span>02</span>
-          <strong>Vehicle preparation</strong>
+          <strong>Prepared cars</strong>
           <p>
-            Each vehicle is cleaned, inspected, charged or fueled, and prepared
-            before handoff.
+            Each vehicle is cleaned, inspected, fueled or charged, then handed
+            off.
           </p>
         </div>
         <div>
           <span>03</span>
           <strong>Pickup or delivery</strong>
-          <p>Choose Cupertino pickup or request delivery in the Bay Area.</p>
+          <p>Cupertino pickup, or Bay Area delivery when requested.</p>
         </div>
       </div>
     </section>
@@ -1243,28 +987,13 @@ function Story() {
 }
 
 function FinalCta({ onBook }: { onBook: (vehicleId: string) => void }) {
-  const reduceMotion = Boolean(useReducedMotion());
   return (
     <section className="final-cta">
-      {!reduceMotion && (
-        <video
-          className="final-cta-film"
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          aria-hidden="true"
-          tabIndex={-1}
-        >
-          <source src={GARAGE_FILM} type="video/mp4" />
-        </video>
-      )}
       <div className="final-cta-content">
         <h2>
           Request
           <br />
-          rental dates.
+          your dates.
         </h2>
         <div className="final-vehicle-choices">
           {vehicles.map((vehicle) => (
@@ -1273,7 +1002,7 @@ function FinalCta({ onBook }: { onBook: (vehicleId: string) => void }) {
               key={vehicle.id}
               onClick={() => onBook(vehicle.id)}
             >
-              <span>{vehicle.maker.toUpperCase()}</span>
+              <span>{vehicle.maker}</span>
               <strong>{vehicle.model}</strong>
               <span aria-hidden="true">→</span>
             </button>
@@ -1295,9 +1024,9 @@ function Footer({ onBook }: { onBook: () => void }) {
         </button>
       </div>
       <div className="footer-bottom">
-        <span>© {new Date().getFullYear()} JJ AUTOS</span>
-        <span>OWNER-OPERATED PERFORMANCE RENTALS</span>
-        <a href="#top">BACK TO TOP ↑</a>
+        <span>© {new Date().getFullYear()} JJ Autos</span>
+        <span>Owner-operated performance rentals</span>
+        <a href="#top">Back to top ↑</a>
       </div>
     </footer>
   );
@@ -1477,7 +1206,7 @@ function BookingDialog({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
+          transition={{ duration: 0.25 }}
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) onClose();
           }}
@@ -1491,14 +1220,14 @@ function BookingDialog({
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
-            transition={{ duration: 0.65, ease: EASE }}
+            transition={{ duration: 0.45, ease: EASE }}
           >
             <div className="dialog-visual">
               <div className="dialog-vehicle-mark" aria-hidden="true">
-                3D
+                JJ
               </div>
               <span className="dialog-vehicle-index">
-                LIVE GARAGE / {selectedVehicle.number}
+                {selectedVehicle.number} / Fleet
               </span>
               <div className="dialog-visual-copy">
                 <span>{selectedVehicle.eyebrow}</span>
@@ -1507,7 +1236,7 @@ function BookingDialog({
                   <br />
                   {selectedVehicle.model}
                 </strong>
-                <small>RATE CONFIRMED WITH DATES</small>
+                <small>Rate confirmed with your dates</small>
                 <div className="dialog-vehicle-specs">
                   {selectedVehicle.specs.map((spec) => (
                     <span key={spec.label}>
@@ -1533,22 +1262,22 @@ function BookingDialog({
                   <motion.div
                     className="success-state"
                     key="success"
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.55, ease: EASE }}
+                    transition={{ duration: 0.4, ease: EASE }}
                   >
                     <div className="success-icon" aria-hidden="true">
                       ✓
                     </div>
-                    <span>REQUEST SUBMITTED</span>
+                    <span>Request submitted</span>
                     <h2 id="booking-title">
                       Request
                       <br />
                       submitted.
                     </h2>
                     <p>
-                      Your request was accepted by the booking service. JJ Autos
-                      will reply with availability and a quote.
+                      Your request was accepted. JJ Autos will reply with
+                      availability and a quote.
                     </p>
                     <button type="button" onClick={onClose}>
                       Return to site <span aria-hidden="true">→</span>
@@ -1559,7 +1288,7 @@ function BookingDialog({
                     key="form"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    exit={{ opacity: 0, y: -15 }}
+                    exit={{ opacity: 0 }}
                   >
                     <h2 id="booking-title">
                       Request
@@ -1703,9 +1432,12 @@ function getEmbedParentOrigin() {
 export default function Home() {
   const [vehicleId, setVehicleId] = useState(vehicles[0].id);
   const [bookingOpen, setBookingOpen] = useState(false);
-  const [modelReady, setModelReady] = useState(false);
   const vehicle =
     vehicles.find((candidate) => candidate.id === vehicleId) ?? vehicles[0];
+
+  useEffect(() => {
+    void loadSketchfab();
+  }, []);
 
   const openBooking = (nextVehicleId?: string) => {
     if (nextVehicleId) setVehicleId(nextVehicleId);
@@ -1743,7 +1475,6 @@ export default function Home() {
   };
 
   const closeBooking = useCallback(() => setBookingOpen(false), []);
-  const markModelReady = useCallback(() => setModelReady(true), []);
   const viewVehicle = useCallback((nextVehicleId: string) => {
     setVehicleId(nextVehicleId);
     window.requestAnimationFrame(() => {
@@ -1754,14 +1485,12 @@ export default function Home() {
   return (
     <MotionConfig reducedMotion="user">
       <div className="app-shell">
-        <GarageLoader ready={modelReady} />
         <Header onBook={() => openBooking()} />
         <main>
           <GarageHero
             activeVehicle={vehicle}
             onSelect={setVehicleId}
             onBook={() => openBooking()}
-            onModelReady={markModelReady}
           />
           <Fleet onBook={openBooking} onView3d={viewVehicle} />
           <Experience onBook={() => openBooking()} />
