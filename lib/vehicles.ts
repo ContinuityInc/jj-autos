@@ -47,6 +47,23 @@ const CC_BY = {
   licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
 };
 
+export function getVehicle(id: string) {
+  return vehicles.find((vehicle) => vehicle.id === id) ?? vehicles[0];
+}
+
+/** Pull the camera back on phones so the whole car stays in frame. */
+export function cameraFor(vehicle: Vehicle, small: boolean) {
+  const { position, target } = vehicle.model3d.camera;
+  if (!small) return { position, target };
+  return {
+    position: position.map(
+      (value, index) =>
+        target[index] + (value - target[index]) * MOBILE_CAMERA_DISTANCE,
+    ),
+    target,
+  };
+}
+
 export const vehicles: Vehicle[] = [
   {
     id: 'corvette',
