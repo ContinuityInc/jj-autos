@@ -47,6 +47,41 @@ const CC_BY = {
   licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
 };
 
+export function getVehicle(id: string) {
+  return vehicles.find((vehicle) => vehicle.id === id) ?? vehicles[0];
+}
+
+/** Pull the camera back on phones so the whole car stays in frame. */
+export function cameraFor(vehicle: Vehicle, small: boolean) {
+  const { position, target } = vehicle.model3d.camera;
+  if (!small) return { position, target };
+  return {
+    position: position.map(
+      (value, index) =>
+        target[index] + (value - target[index]) * MOBILE_CAMERA_DISTANCE,
+    ),
+    target,
+  };
+}
+
+/**
+ * Next car to warm in the background, walking the catalog from the visible
+ * one. Skips cars already mounted so the visible model never shares bandwidth.
+ */
+export function nextVehicleToPreload(
+  currentId: string,
+  mountedIds: readonly string[],
+  catalog: readonly Pick<Vehicle, 'id'>[] = vehicles,
+) {
+  const start = catalog.findIndex((item) => item.id === currentId);
+  if (start < 0) return null;
+  for (let offset = 1; offset < catalog.length; offset += 1) {
+    const candidate = catalog[(start + offset) % catalog.length];
+    if (!mountedIds.includes(candidate.id)) return candidate.id;
+  }
+  return null;
+}
+
 export const vehicles: Vehicle[] = [
   {
     id: 'corvette',

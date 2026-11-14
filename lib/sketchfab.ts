@@ -94,19 +94,38 @@ export function readProgress(value: unknown) {
   return Math.min(1, Math.max(0, raw));
 }
 
-// Background preloading is skipped on small screens and slow or metered
-// connections, where downloading two extra car models costs too much.
-export function canPreloadModels() {
-  const connection = (
+export type NetworkConnection = {
+  saveData?: boolean;
+  effectiveType?: string;
+};
+
+function currentConnection(): NetworkConnection | undefined {
+  return (
     navigator as Navigator & {
-      connection?: { saveData?: boolean; effectiveType?: string };
+      connection?: NetworkConnection;
     }
   ).connection;
-  if (connection?.saveData) return false;
-  if (connection?.effectiveType && /2g|3g/.test(connection.effectiveType)) {
+}
+
+// Background preloading is skipped on small screens and slow or metered
+// connections, where downloading two extra car models costs too much.
+export function canPreloadModels(
+  runtime: {
+    connection?: NetworkConnection;
+    isDesktop: boolean;
+  } = {
+    connection: currentConnection(),
+    isDesktop: window.matchMedia('(min-width: 768px)').matches,
+  },
+) {
+  if (runtime.connection?.saveData) return false;
+  if (
+    runtime.connection?.effectiveType &&
+    /2g|3g/.test(runtime.connection.effectiveType)
+  ) {
     return false;
   }
-  return window.matchMedia('(min-width: 768px)').matches;
+  return runtime.isDesktop;
 }
 
 export function whenIdle(callback: () => void) {

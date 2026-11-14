@@ -11,18 +11,20 @@ import {
 } from '@/lib/sketchfab';
 import type { ViewerApi } from '@/lib/sketchfab';
 import {
+  BOOKING_ENDPOINT,
+  buildBookingPayload,
+  getEmbedParentOrigin,
+  validateBookingDates,
+} from '@/lib/booking';
+import {
   DESKTOP_FOV,
-  MOBILE_CAMERA_DISTANCE,
   MOBILE_FOV,
+  cameraFor,
+  getVehicle,
+  nextVehicleToPreload,
   vehicles,
 } from '@/lib/vehicles';
 import type { Photo, Vehicle } from '@/lib/vehicles';
-
-const BOOKING_ENDPOINT = 'https://formspree.io/f/myeywjdl';
-const EMBED_ALLOWED_ORIGINS = new Set([
-  'https://dory-rust-8ts3.squarespace.com',
-  'https://jjautos.sanylax.com',
-]);
 // Slow connections can take a while on the first model. The timer restarts
 // whenever Sketchfab reports progress, so this only trips on a stalled load.
 const LOAD_TIMEOUT_MS = 30_000;
@@ -47,10 +49,6 @@ const VIEWER_OPTIONS = {
 };
 
 type ViewerStatus = 'loading' | 'ready' | 'error';
-
-function getVehicle(id: string) {
-  return vehicles.find((vehicle) => vehicle.id === id) ?? vehicles[0];
-}
 
 function Header({ onBook }: { onBook: () => void }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -121,18 +119,6 @@ function Header({ onBook }: { onBook: () => void }) {
       </button>
     </header>
   );
-}
-
-function cameraFor(vehicle: Vehicle, small: boolean) {
-  const { position, target } = vehicle.model3d.camera;
-  if (!small) return { position, target };
-  return {
-    position: position.map(
-      (value, index) =>
-        target[index] + (value - target[index]) * MOBILE_CAMERA_DISTANCE,
-    ),
-    target,
-  };
 }
 
 function ModelViewer({
@@ -290,14 +276,7 @@ function Showroom({
   // picker switches instantly. One at a time, so the visible car never
   // competes for bandwidth.
   const busy = mountedIds.some((id) => (statuses[id] ?? 'loading') === 'loading');
-  const nextToPreload = (() => {
-    const start = vehicles.findIndex((item) => item.id === vehicle.id);
-    for (let offset = 1; offset < vehicles.length; offset += 1) {
-      const candidate = vehicles[(start + offset) % vehicles.length];
-      if (!mountedIds.includes(candidate.id)) return candidate.id;
-    }
-    return null;
-  })();
+  const nextToPreload = nextVehicleToPreload(vehicle.id, mountedIds);
 
   useEffect(() => {
     if (busy || !nextToPreload || activeStatus !== 'ready') return;
@@ -792,21 +771,23 @@ function BookingForm({
     };
     const start = read('startDate');
     const end = read('endDate');
-    if (start && end && end <= start) {
-      setError('The return date needs to be after the pickup date.');
+    const dateError = validateBookingDates(start, end);
+    if (dateError) {
+      setError(dateError);
       return;
     }
-    const payload = {
-      vehicle: `${vehicle.maker} ${vehicle.model}`,
-      vehicleId: vehicle.id,
-      startDate: start,
-      endDate: end,
-      handoff: read('handoff'),
-      name: read('name'),
-      email: read('email'),
-      note: read('note'),
+    const payload = buildBookingPayload({
+      vehicle,
+      fields: {
+        startDate: start,
+        endDate: end,
+        handoff: read('handoff'),
+        name: read('name'),
+        email: read('email'),
+        note: read('note'),
+      },
       source: window.location.hostname,
-    };
+    });
     setError('');
     setState('submitting');
     try {
@@ -1018,21 +999,12 @@ function BookingDialog({
   );
 }
 
-function getEmbedParentOrigin() {
-  if (
-    typeof window === 'undefined' ||
-    new URLSearchParams(window.location.search).get('embed') !==
-      'squarespace' ||
-    !document.referrer
-  ) {
-    return null;
-  }
-  try {
-    const origin = new URL(document.referrer).origin;
-    return EMBED_ALLOWED_ORIGINS.has(origin) ? origin : null;
-  } catch {
-    return null;
-  }
+function readEmbedParentOrigin() {
+  if (typeof window === 'undefined') return null;
+  return getEmbedParentOrigin({
+    search: window.location.search,
+    referrer: document.referrer,
+  });
 }
 
 export default function Home() {
@@ -1045,7 +1017,7 @@ export default function Home() {
 
   const openBooking = (nextVehicleId?: string) => {
     if (nextVehicleId) setVehicleId(nextVehicleId);
-    const parentOrigin = getEmbedParentOrigin();
+    const parentOrigin = readEmbedParentOrigin();
     if (parentOrigin && window.parent !== window) {
       const requestId = window.crypto.randomUUID();
       let acknowledged = false;
