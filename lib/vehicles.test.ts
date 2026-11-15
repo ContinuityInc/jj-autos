@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  DESKTOP_FOV,
   MOBILE_CAMERA_DISTANCE,
+  MOBILE_FOV,
   cameraFor,
+  fieldOfView,
   getVehicle,
   nextVehicleToPreload,
   vehicles,
@@ -14,6 +17,13 @@ describe('vehicles catalog', () => {
       'bmw',
       'tesla',
     ]);
+  });
+
+  it('keeps catalog ids and Sketchfab uids unique', () => {
+    const ids = vehicles.map((vehicle) => vehicle.id);
+    const uids = vehicles.map((vehicle) => vehicle.model3d.uid);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(new Set(uids).size).toBe(uids.length);
   });
 
   it('keeps the BMW id after the M4 replaced the 840i', () => {
@@ -37,6 +47,13 @@ describe('vehicles catalog', () => {
   it('falls back to the first car for unknown booking ids', () => {
     expect(getVehicle('missing').id).toBe('corvette');
     expect(getVehicle('tesla').id).toBe('tesla');
+  });
+});
+
+describe('fieldOfView', () => {
+  it('widens the lens on phones and keeps the desktop framing on larger screens', () => {
+    expect(fieldOfView(true)).toBe(MOBILE_FOV);
+    expect(fieldOfView(false)).toBe(DESKTOP_FOV);
   });
 });
 

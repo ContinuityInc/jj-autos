@@ -42,6 +42,10 @@ export const MOBILE_CAMERA_DISTANCE = 1.9;
 export const DESKTOP_FOV = 32;
 export const MOBILE_FOV = 42;
 
+export function fieldOfView(small: boolean) {
+  return small ? MOBILE_FOV : DESKTOP_FOV;
+}
+
 const CC_BY = {
   license: 'CC BY 4.0',
   licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',

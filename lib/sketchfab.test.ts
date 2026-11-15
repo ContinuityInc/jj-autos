@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { canPreloadModels, readProgress } from '@/lib/sketchfab';
+import {
+  canPreloadModels,
+  readProgress,
+  viewerDeviceOptions,
+} from '@/lib/sketchfab';
 
 describe('readProgress', () => {
   it('reads a bare number from Sketchfab', () => {
@@ -79,5 +83,22 @@ describe('canPreloadModels', () => {
 
   it('treats a missing connection API as a normal desktop session', () => {
     expect(canPreloadModels({ isDesktop: true })).toBe(true);
+  });
+});
+
+describe('viewerDeviceOptions', () => {
+  it('keeps autospin and full textures on desktop', () => {
+    expect(viewerDeviceOptions(false, false)).toEqual({
+      autospin: 0.06,
+      max_texture_size: 2048,
+    });
+  });
+
+  it('drops autospin when the visitor prefers reduced motion', () => {
+    expect(viewerDeviceOptions(false, true).autospin).toBe(0);
+  });
+
+  it('caps texture size on phones so the first model can finish', () => {
+    expect(viewerDeviceOptions(true, false).max_texture_size).toBe(1024);
   });
 });

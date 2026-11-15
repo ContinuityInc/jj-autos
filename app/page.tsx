@@ -3,28 +3,36 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CSSProperties, SyntheticEvent } from 'react';
 import {
+  BOOKING_ENDPOINT,
+  OPEN_BOOKING_ACK_TIMEOUT_MS,
+  buildBookingPayload,
+  createOpenBookingMessage,
+  getEmbedParentOrigin,
+  greetingFirstName,
+  isOpenBookingAck,
+  readFormField,
+  shouldDelegateBookingToParent,
+  todayInLocalTime,
+  validateBookingDates,
+} from '@/lib/booking';
+import {
   SKETCHFAB_VERSION,
   canPreloadModels,
   loadSketchfab,
   readProgress,
+  viewerDeviceOptions,
   whenIdle,
+  type ViewerApi,
 } from '@/lib/sketchfab';
-import type { ViewerApi } from '@/lib/sketchfab';
 import {
-  BOOKING_ENDPOINT,
-  buildBookingPayload,
-  getEmbedParentOrigin,
-  validateBookingDates,
-} from '@/lib/booking';
-import {
-  DESKTOP_FOV,
-  MOBILE_FOV,
   cameraFor,
+  fieldOfView,
   getVehicle,
   nextVehicleToPreload,
   vehicles,
+  type Photo,
+  type Vehicle,
 } from '@/lib/vehicles';
-import type { Photo, Vehicle } from '@/lib/vehicles';
 // Slow connections can take a while on the first model. The timer restarts
 // whenever Sketchfab reports progress, so this only trips on a stalled load.
 const LOAD_TIMEOUT_MS = 30_000;
@@ -162,8 +170,7 @@ function ModelViewer({
         if (!alive || !iframeRef.current) return;
         new Sketchfab(SKETCHFAB_VERSION, iframeRef.current).init(model3d.uid, {
           ...VIEWER_OPTIONS,
-          autospin: reduceMotion ? 0 : 0.06,
-          max_texture_size: small ? 1024 : 2048,
+          ...viewerDeviceOptions(small, reduceMotion),
           success: (api) => {
             if (!alive) {
               api.stop();
@@ -180,7 +187,7 @@ function ModelViewer({
               if (!alive) return;
               window.clearTimeout(timer);
               const { position, target } = cameraFor(vehicle, small);
-              api.setFov(small ? MOBILE_FOV : DESKTOP_FOV);
+              api.setFov(fieldOfView(small));
               api.setCameraLookAt(position, target, 0);
               setReady(true);
               onStatus(id, 'ready');
@@ -275,7 +282,9 @@ function Showroom({
   // Once nothing is downloading, quietly load the next car in line so the
   // picker switches instantly. One at a time, so the visible car never
   // competes for bandwidth.
-  const busy = mountedIds.some((id) => (statuses[id] ?? 'loading') === 'loading');
+  const busy = mountedIds.some(
+    (id) => (statuses[id] ?? 'loading') === 'loading',
+  );
   const nextToPreload = nextVehicleToPreload(vehicle.id, mountedIds);
 
   useEffect(() => {
@@ -586,8 +595,8 @@ function Fleet({
         ))}
       </div>
       <p className="fine-print">
-        * Manufacturer 0–60 mph figures. Tesla’s subtracts a one-foot rollout.
-        † Requires the Z51 Performance Package. Real-world times depend on
+        * Manufacturer 0–60 mph figures. Tesla’s subtracts a one-foot rollout. †
+        Requires the Z51 Performance Package. Real-world times depend on
         conditions, so ask about each car’s exact configuration.
       </p>
     </section>
@@ -740,13 +749,6 @@ function Footer() {
 
 type BookingState = 'idle' | 'submitting' | 'sent';
 
-function todayInLocalTime() {
-  const now = new Date();
-  return new Date(now.getTime() - now.getTimezoneOffset() * 60_000)
-    .toISOString()
-    .slice(0, 10);
-}
-
 function BookingForm({
   vehicle,
   onSelectVehicle,
@@ -765,12 +767,8 @@ function BookingForm({
   const submit = async (event: SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const read = (key: string) => {
-      const value = formData.get(key);
-      return typeof value === 'string' ? value.trim() : '';
-    };
-    const start = read('startDate');
-    const end = read('endDate');
+    const start = readFormField(formData, 'startDate');
+    const end = readFormField(formData, 'endDate');
     const dateError = validateBookingDates(start, end);
     if (dateError) {
       setError(dateError);
@@ -781,10 +779,10 @@ function BookingForm({
       fields: {
         startDate: start,
         endDate: end,
-        handoff: read('handoff'),
-        name: read('name'),
-        email: read('email'),
-        note: read('note'),
+        handoff: readFormField(formData, 'handoff'),
+        name: readFormField(formData, 'name'),
+        email: readFormField(formData, 'email'),
+        note: readFormField(formData, 'note'),
       },
       source: window.location.hostname,
     });
@@ -813,7 +811,7 @@ function BookingForm({
   };
 
   if (state === 'sent') {
-    const firstName = sentTo.name.split(/\s+/)[0];
+    const firstName = greetingFirstName(sentTo.name);
     return (
       <div className="booking-sent">
         <h2 id="booking-title">Request sent</h2>
@@ -1018,15 +1016,22 @@ export default function Home() {
   const openBooking = (nextVehicleId?: string) => {
     if (nextVehicleId) setVehicleId(nextVehicleId);
     const parentOrigin = readEmbedParentOrigin();
-    if (parentOrigin && window.parent !== window) {
+    if (
+      shouldDelegateBookingToParent({
+        parentOrigin,
+        isEmbedded: window.parent !== window,
+      }) &&
+      parentOrigin
+    ) {
       const requestId = window.crypto.randomUUID();
       let acknowledged = false;
       const onMessage = (event: MessageEvent) => {
         if (
-          event.origin === parentOrigin &&
-          event.source === window.parent &&
-          event.data?.type === 'jjautos:open-booking:ack' &&
-          event.data?.requestId === requestId
+          isOpenBookingAck(
+            event,
+            { origin: parentOrigin, source: window.parent },
+            requestId,
+          )
         ) {
           acknowledged = true;
           window.removeEventListener('message', onMessage);
@@ -1034,17 +1039,13 @@ export default function Home() {
       };
       window.addEventListener('message', onMessage);
       window.parent.postMessage(
-        {
-          type: 'jjautos:open-booking',
-          vehicleId: nextVehicleId ?? vehicleId,
-          requestId,
-        },
+        createOpenBookingMessage(nextVehicleId ?? vehicleId, requestId),
         parentOrigin,
       );
       window.setTimeout(() => {
         window.removeEventListener('message', onMessage);
         if (!acknowledged) showBooking();
-      }, 1200);
+      }, OPEN_BOOKING_ACK_TIMEOUT_MS);
       return;
     }
     showBooking();

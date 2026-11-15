@@ -2,8 +2,16 @@ import { describe, expect, it } from 'vitest';
 import {
   BOOKING_DATE_ERROR,
   EMBED_ALLOWED_ORIGINS,
+  OPEN_BOOKING_ACK_TYPE,
+  OPEN_BOOKING_TYPE,
   buildBookingPayload,
+  createOpenBookingMessage,
   getEmbedParentOrigin,
+  greetingFirstName,
+  isOpenBookingAck,
+  readFormField,
+  shouldDelegateBookingToParent,
+  todayInLocalTime,
   validateBookingDates,
 } from '@/lib/booking';
 import { getVehicle } from '@/lib/vehicles';
@@ -112,5 +120,157 @@ describe('getEmbedParentOrigin', () => {
         referrer: 'not a url',
       }),
     ).toBeNull();
+  });
+});
+
+describe('readFormField', () => {
+  it('trims strings so booking payloads do not keep accidental spaces', () => {
+    const formData = new FormData();
+    formData.set('name', '  Alex Rivera  ');
+    formData.set('email', 'alex@example.com');
+    expect(readFormField(formData, 'name')).toBe('Alex Rivera');
+    expect(readFormField(formData, 'email')).toBe('alex@example.com');
+  });
+
+  it('treats missing or non-string values as empty', () => {
+    const formData = new FormData();
+    formData.set('note', new File(['x'], 'note.txt'));
+    expect(readFormField(formData, 'note')).toBe('');
+    expect(readFormField(formData, 'missing')).toBe('');
+  });
+});
+
+describe('todayInLocalTime', () => {
+  it('uses the visitor calendar, not UTC, around midnight', () => {
+    expect(
+      todayInLocalTime({
+        getTime: () => Date.UTC(2026, 10, 15, 7, 0, 0),
+        getTimezoneOffset: () => 480,
+      }),
+    ).toBe('2026-11-14');
+    expect(
+      todayInLocalTime({
+        getTime: () => Date.UTC(2026, 10, 15, 8, 0, 0),
+        getTimezoneOffset: () => 480,
+      }),
+    ).toBe('2026-11-15');
+  });
+
+  it('rolls forward for timezones ahead of UTC', () => {
+    expect(
+      todayInLocalTime({
+        getTime: () => Date.UTC(2026, 10, 14, 14, 0, 0),
+        getTimezoneOffset: () => -600,
+      }),
+    ).toBe('2026-11-15');
+  });
+});
+
+describe('greetingFirstName', () => {
+  it('uses the first word of the submitted name', () => {
+    expect(greetingFirstName('Alex Rivera')).toBe('Alex');
+    expect(greetingFirstName('  Sam  Lee ')).toBe('Sam');
+  });
+
+  it('returns empty when the name is blank so the thanks line stays grammatical', () => {
+    expect(greetingFirstName('')).toBe('');
+    expect(greetingFirstName('   ')).toBe('');
+  });
+});
+
+describe('open-booking handshake', () => {
+  const parent = {
+    origin: 'https://jjautos.sanylax.com',
+    source: { id: 'parent' },
+  };
+  const requestId = 'req-123';
+
+  it('delegates booking only when the page is framed by an allowlisted parent', () => {
+    expect(
+      shouldDelegateBookingToParent({
+        parentOrigin: parent.origin,
+        isEmbedded: true,
+      }),
+    ).toBe(true);
+    expect(
+      shouldDelegateBookingToParent({
+        parentOrigin: parent.origin,
+        isEmbedded: false,
+      }),
+    ).toBe(false);
+    expect(
+      shouldDelegateBookingToParent({
+        parentOrigin: null,
+        isEmbedded: true,
+      }),
+    ).toBe(false);
+  });
+
+  it('posts the catalog vehicle id the parent already keys bookings on', () => {
+    expect(createOpenBookingMessage('bmw', requestId)).toEqual({
+      type: OPEN_BOOKING_TYPE,
+      vehicleId: 'bmw',
+      requestId,
+    });
+  });
+
+  it('accepts only a matching ack from the parent window', () => {
+    expect(
+      isOpenBookingAck(
+        {
+          origin: parent.origin,
+          source: parent.source,
+          data: { type: OPEN_BOOKING_ACK_TYPE, requestId },
+        },
+        parent,
+        requestId,
+      ),
+    ).toBe(true);
+  });
+
+  it('rejects acks from another origin, window, type, or request', () => {
+    const valid = {
+      origin: parent.origin,
+      source: parent.source,
+      data: { type: OPEN_BOOKING_ACK_TYPE, requestId },
+    };
+    expect(
+      isOpenBookingAck(
+        { ...valid, origin: 'https://evil.example' },
+        parent,
+        requestId,
+      ),
+    ).toBe(false);
+    expect(
+      isOpenBookingAck(
+        { ...valid, source: { id: 'other' } },
+        parent,
+        requestId,
+      ),
+    ).toBe(false);
+    expect(
+      isOpenBookingAck(
+        { ...valid, data: { type: OPEN_BOOKING_TYPE, requestId } },
+        parent,
+        requestId,
+      ),
+    ).toBe(false);
+    expect(
+      isOpenBookingAck(
+        { ...valid, data: { type: OPEN_BOOKING_ACK_TYPE, requestId: 'other' } },
+        parent,
+        requestId,
+      ),
+    ).toBe(false);
+    expect(isOpenBookingAck({ ...valid, data: null }, parent, requestId)).toBe(
+      false,
+    );
+    expect(
+      isOpenBookingAck(
+        { ...valid, data: 'jjautos:open-booking:ack' },
+        parent,
+        requestId,
+      ),
+    ).toBe(false);
   });
 });

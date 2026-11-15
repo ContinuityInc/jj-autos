@@ -136,3 +136,11 @@ export function whenIdle(callback: () => void) {
   const handle = window.setTimeout(callback, 1200);
   return () => window.clearTimeout(handle);
 }
+
+/** Phones get smaller textures; reduced-motion visitors get no autospin. */
+export function viewerDeviceOptions(small: boolean, reduceMotion: boolean) {
+  return {
+    autospin: reduceMotion ? 0 : 0.06,
+    max_texture_size: small ? 1024 : 2048,
+  };
+}
