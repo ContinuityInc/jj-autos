@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   DESKTOP_FOV,
@@ -9,6 +11,8 @@ import {
   nextVehicleToPreload,
   vehicles,
 } from '@/lib/vehicles';
+
+const publicDir = path.resolve(__dirname, '../public');
 
 describe('vehicles catalog', () => {
   it('keeps the booking vehicle keys the Squarespace embed already uses', () => {
@@ -47,6 +51,31 @@ describe('vehicles catalog', () => {
   it('falls back to the first car for unknown booking ids', () => {
     expect(getVehicle('missing').id).toBe('corvette');
     expect(getVehicle('tesla').id).toBe('tesla');
+  });
+
+  it('ships every 3D poster and fleet photo the page references', () => {
+    for (const vehicle of vehicles) {
+      for (const width of [900, 1800]) {
+        expect(
+          existsSync(
+            path.join(
+              publicDir,
+              `${vehicle.model3d.poster.src.slice(1)}-${width}.webp`,
+            ),
+          ),
+        ).toBe(true);
+      }
+      for (const photo of vehicle.photos ?? []) {
+        expect(photo.alt.length).toBeGreaterThan(0);
+        for (const width of [800, 1200]) {
+          expect(
+            existsSync(
+              path.join(publicDir, `${photo.src.slice(1)}-${width}.webp`),
+            ),
+          ).toBe(true);
+        }
+      }
+    }
   });
 });
 

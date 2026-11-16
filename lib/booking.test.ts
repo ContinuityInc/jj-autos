@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   BOOKING_DATE_ERROR,
+  BOOKING_ENDPOINT,
   EMBED_ALLOWED_ORIGINS,
   OPEN_BOOKING_ACK_TYPE,
   OPEN_BOOKING_TYPE,
@@ -15,6 +16,12 @@ import {
   validateBookingDates,
 } from '@/lib/booking';
 import { getVehicle } from '@/lib/vehicles';
+
+describe('BOOKING_ENDPOINT', () => {
+  it('keeps requests on the live Formspree form', () => {
+    expect(BOOKING_ENDPOINT).toBe('https://formspree.io/f/myeywjdl');
+  });
+});
 
 describe('validateBookingDates', () => {
   it('rejects a return on or before pickup', () => {

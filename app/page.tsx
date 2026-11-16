@@ -15,6 +15,7 @@ import {
   todayInLocalTime,
   validateBookingDates,
 } from '@/lib/booking';
+import { galleryIndexFromScroll, wrapGalleryIndex } from '@/lib/gallery';
 import {
   SKETCHFAB_VERSION,
   canPreloadModels,
@@ -446,7 +447,7 @@ function PhotoGallery({ photos, label }: { photos: Photo[]; label: string }) {
   const go = (next: number) => {
     const track = trackRef.current;
     if (!track) return;
-    const clamped = (next + photos.length) % photos.length;
+    const clamped = wrapGalleryIndex(next, photos.length);
     track.scrollTo({ left: clamped * track.clientWidth, behavior: 'smooth' });
   };
 
@@ -457,7 +458,13 @@ function PhotoGallery({ photos, label }: { photos: Photo[]; label: string }) {
         ref={trackRef}
         onScroll={(event) => {
           const track = event.currentTarget;
-          setIndex(Math.round(track.scrollLeft / track.clientWidth));
+          setIndex(
+            galleryIndexFromScroll(
+              track.scrollLeft,
+              track.clientWidth,
+              photos.length,
+            ),
+          );
         }}
       >
         {photos.map((photo) => (

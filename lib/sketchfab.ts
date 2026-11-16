@@ -128,13 +128,23 @@ export function canPreloadModels(
   return runtime.isDesktop;
 }
 
-export function whenIdle(callback: () => void) {
-  if (typeof window.requestIdleCallback === 'function') {
-    const handle = window.requestIdleCallback(callback, { timeout: 2500 });
-    return () => window.cancelIdleCallback(handle);
+export type IdleRuntime = {
+  requestIdleCallback?: (
+    callback: () => void,
+    options?: { timeout: number },
+  ) => number;
+  cancelIdleCallback?: (handle: number) => void;
+  setTimeout: (callback: () => void, ms: number) => number;
+  clearTimeout: (handle: number) => void;
+};
+
+export function whenIdle(callback: () => void, runtime: IdleRuntime = window) {
+  if (typeof runtime.requestIdleCallback === 'function') {
+    const handle = runtime.requestIdleCallback(callback, { timeout: 2500 });
+    return () => runtime.cancelIdleCallback?.(handle);
   }
-  const handle = window.setTimeout(callback, 1200);
-  return () => window.clearTimeout(handle);
+  const handle = runtime.setTimeout(callback, 1200);
+  return () => runtime.clearTimeout(handle);
 }
 
 /** Phones get smaller textures; reduced-motion visitors get no autospin. */

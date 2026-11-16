@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  SKETCHFAB_SCRIPT,
+  SKETCHFAB_VERSION,
   canPreloadModels,
   readProgress,
   viewerDeviceOptions,
+  whenIdle,
 } from '@/lib/sketchfab';
 
 describe('readProgress', () => {
@@ -100,5 +103,64 @@ describe('viewerDeviceOptions', () => {
 
   it('caps texture size on phones so the first model can finish', () => {
     expect(viewerDeviceOptions(true, false).max_texture_size).toBe(1024);
+  });
+});
+
+describe('SKETCHFAB_SCRIPT', () => {
+  it('loads the pinned viewer from Sketchfab, not an unversioned URL', () => {
+    expect(SKETCHFAB_SCRIPT).toBe(
+      `https://static.sketchfab.com/api/sketchfab-viewer-${SKETCHFAB_VERSION}.js`,
+    );
+  });
+});
+
+describe('whenIdle', () => {
+  it('uses requestIdleCallback when the browser provides it', () => {
+    const calls: Array<{ timeout?: number }> = [];
+    const cancelled: number[] = [];
+    const runtime = {
+      requestIdleCallback: (
+        callback: () => void,
+        options?: { timeout: number },
+      ) => {
+        calls.push(options ?? {});
+        callback();
+        return 7;
+      },
+      cancelIdleCallback: (handle: number) => {
+        cancelled.push(handle);
+      },
+      setTimeout: () => {
+        throw new Error('setTimeout should not run when idle callback exists');
+      },
+      clearTimeout: () => undefined,
+    };
+
+    const cancel = whenIdle(() => undefined, runtime);
+    cancel();
+
+    expect(calls).toEqual([{ timeout: 2500 }]);
+    expect(cancelled).toEqual([7]);
+  });
+
+  it('falls back to a timeout when requestIdleCallback is missing', () => {
+    const timeouts: number[] = [];
+    const cleared: number[] = [];
+    const runtime = {
+      setTimeout: (callback: () => void, ms: number) => {
+        timeouts.push(ms);
+        callback();
+        return 11;
+      },
+      clearTimeout: (handle: number) => {
+        cleared.push(handle);
+      },
+    };
+
+    const cancel = whenIdle(() => undefined, runtime);
+    cancel();
+
+    expect(timeouts).toEqual([1200]);
+    expect(cleared).toEqual([11]);
   });
 });
