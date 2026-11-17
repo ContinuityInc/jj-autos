@@ -3,32 +3,51 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CSSProperties, SyntheticEvent } from 'react';
 import {
+  BOOKING_ENDPOINT,
+  OPEN_BOOKING_ACK_TIMEOUT_MS,
+  bookingOptionLabel,
+  buildBookingPayload,
+  createOpenBookingMessage,
+  getEmbedParentOrigin,
+  greetingFirstName,
+  isOpenBookingAck,
+  readFormField,
+  shouldDelegateBookingToParent,
+  todayInLocalTime,
+  validateBookingDates,
+} from '@/lib/booking';
+import { galleryIndexFromScroll, wrapGalleryIndex } from '@/lib/gallery';
+import {
   SKETCHFAB_VERSION,
+  VIEWER_POST_PROCESSING,
   canPreloadModels,
   loadSketchfab,
   readProgress,
+  viewerDeviceOptions,
   whenIdle,
+  type ViewerApi,
 } from '@/lib/sketchfab';
-import type { ViewerApi } from '@/lib/sketchfab';
 import {
-  DESKTOP_FOV,
-  MOBILE_CAMERA_DISTANCE,
-  MOBILE_FOV,
+  nextVehicleToPreloadIfRoom,
+  pickerOverflowEdges,
+  pickerScrollDelta,
+  preloadViewer,
+  rememberShownVehicle,
+} from '@/lib/showroom';
+import {
+  cameraFor,
+  fieldOfView,
+  fleetCounts,
+  getVehicle,
+  showroomIntro,
+  uniqueModelCredits,
   vehicles,
+  type Photo,
+  type Vehicle,
 } from '@/lib/vehicles';
-import type { Photo, Vehicle } from '@/lib/vehicles';
-
-const BOOKING_ENDPOINT = 'https://formspree.io/f/myeywjdl';
-const EMBED_ALLOWED_ORIGINS = new Set([
-  'https://dory-rust-8ts3.squarespace.com',
-  'https://jjautos.sanylax.com',
-]);
 // Slow connections can take a while on the first model. The timer restarts
 // whenever Sketchfab reports progress, so this only trips on a stalled load.
 const LOAD_TIMEOUT_MS = 30_000;
-// Each loaded car holds its own WebGL viewer, so only this many stay loaded
-// at once. Showing another car drops the one that was shown longest ago.
-const MAX_LIVE_VIEWERS = 3;
 
 const VIEWER_OPTIONS = {
   autostart: 1,
@@ -51,44 +70,8 @@ const VIEWER_OPTIONS = {
 
 type ViewerStatus = 'loading' | 'ready' | 'error';
 
-function getVehicle(id: string) {
-  return vehicles.find((vehicle) => vehicle.id === id) ?? vehicles[0];
-}
-
-const NUMBER_WORDS = [
-  'no',
-  'one',
-  'two',
-  'three',
-  'four',
-  'five',
-  'six',
-  'seven',
-  'eight',
-  'nine',
-  'ten',
-];
-
-// "four cars", "one car". The counts come from the fleet list, so the copy
-// stays right when a car is added or an arriving one is delivered.
-function carCount(count: number) {
-  return `${NUMBER_WORDS[count] ?? count} ${count === 1 ? 'car' : 'cars'}`;
-}
-
-function capitalize(text: string) {
-  return text.charAt(0).toUpperCase() + text.slice(1);
-}
-
-const readyCount = vehicles.filter((vehicle) => !vehicle.arriving).length;
-const arrivingCount = vehicles.length - readyCount;
-
-// Two cars can share one 3D model, which is credited once.
-const creditedModels = vehicles
-  .map((vehicle) => vehicle.model3d)
-  .filter(
-    (model, index, all) =>
-      all.findIndex((other) => other.uid === model.uid) === index,
-  );
+const { arrivingCount } = fleetCounts();
+const creditedModels = uniqueModelCredits();
 
 function ArrivingTag() {
   return <span className="soon">Arriving soon</span>;
@@ -165,18 +148,6 @@ function Header({ onBook }: { onBook: () => void }) {
   );
 }
 
-function cameraFor(vehicle: Vehicle, small: boolean) {
-  const { position, target } = vehicle.model3d.camera;
-  if (!small) return { position, target };
-  return {
-    position: position.map(
-      (value, index) =>
-        target[index] + (value - target[index]) * MOBILE_CAMERA_DISTANCE,
-    ),
-    target,
-  };
-}
-
 function ModelViewer({
   vehicle,
   active,
@@ -218,8 +189,7 @@ function ModelViewer({
         if (!alive || !iframeRef.current) return;
         new Sketchfab(SKETCHFAB_VERSION, iframeRef.current).init(model3d.uid, {
           ...VIEWER_OPTIONS,
-          autospin: reduceMotion ? 0 : 0.06,
-          max_texture_size: small ? 1024 : 2048,
+          ...viewerDeviceOptions(small, reduceMotion),
           success: (api) => {
             if (!alive) {
               api.stop();
@@ -236,11 +206,11 @@ function ModelViewer({
               if (!alive) return;
               window.clearTimeout(timer);
               const { position, target } = cameraFor(vehicle, small);
-              api.setFov(small ? MOBILE_FOV : DESKTOP_FOV);
+              api.setFov(fieldOfView(small));
               api.setCameraLookAt(position, target, 0);
               // Some models ship with a vignette, which would darken the
               // edges of the stage and no longer match the still.
-              api.setPostProcessing({ vignetteEnable: false });
+              api.setPostProcessing(VIEWER_POST_PROCESSING);
               setReady(true);
               onStatus(id, 'ready');
             });
@@ -318,21 +288,13 @@ function Showroom({
   // A car is loaded the first time it is shown and stays cached until
   // MAX_LIVE_VIEWERS other cars have been shown since.
   if (mountedIds[mountedIds.length - 1] !== vehicle.id) {
-    setMountedIds((ids) =>
-      [...ids.filter((id) => id !== vehicle.id), vehicle.id].slice(
-        -MAX_LIVE_VIEWERS,
-      ),
-    );
+    setMountedIds((ids) => rememberShownVehicle(ids, vehicle.id));
   }
 
   // Loading ahead of a click only fills free slots. It never pushes out a
   // car the visitor has already looked at.
   const mount = useCallback((id: string) => {
-    setMountedIds((ids) =>
-      ids.includes(id) || ids.length >= MAX_LIVE_VIEWERS
-        ? ids
-        : [...ids.slice(0, -1), id, ...ids.slice(-1)],
-    );
+    setMountedIds((ids) => preloadViewer(ids, id));
   }, []);
   const handleStatus = useCallback((id: string, status: ViewerStatus) => {
     setStatuses((current) =>
@@ -350,16 +312,10 @@ function Showroom({
   // Once nothing is downloading, quietly load the next car in line so the
   // picker switches instantly. One at a time, so the visible car never
   // competes for bandwidth, and only while there is a free slot.
-  const busy = mountedIds.some((id) => (statuses[id] ?? 'loading') === 'loading');
-  const nextToPreload = (() => {
-    if (mountedIds.length >= MAX_LIVE_VIEWERS) return null;
-    const start = vehicles.findIndex((item) => item.id === vehicle.id);
-    for (let offset = 1; offset < vehicles.length; offset += 1) {
-      const candidate = vehicles[(start + offset) % vehicles.length];
-      if (!mountedIds.includes(candidate.id)) return candidate.id;
-    }
-    return null;
-  })();
+  const busy = mountedIds.some(
+    (id) => (statuses[id] ?? 'loading') === 'loading',
+  );
+  const nextToPreload = nextVehicleToPreloadIfRoom(vehicle.id, mountedIds);
 
   useEffect(() => {
     if (busy || !nextToPreload || activeStatus !== 'ready') return;
@@ -385,21 +341,26 @@ function Showroom({
     if (!picker || !selected) return;
     const box = picker.getBoundingClientRect();
     const item = selected.getBoundingClientRect();
-    if (item.left < box.left) {
-      picker.scrollBy({ left: item.left - box.left });
-    } else if (item.right > box.right) {
-      picker.scrollBy({ left: item.right - box.right });
-    }
+    const delta = pickerScrollDelta({
+      pickerLeft: box.left,
+      pickerRight: box.right,
+      itemLeft: item.left,
+      itemRight: item.right,
+    });
+    if (delta !== 0) picker.scrollBy({ left: delta });
   }, [vehicle.id]);
 
   // An edge with more cars past it fades out, so it is clear the row scrolls.
   const measurePicker = useCallback(() => {
     const picker = pickerRef.current;
     if (!picker) return;
-    const start = picker.scrollLeft > 1;
-    const end = picker.scrollLeft + picker.clientWidth < picker.scrollWidth - 1;
+    const next = pickerOverflowEdges({
+      scrollLeft: picker.scrollLeft,
+      clientWidth: picker.clientWidth,
+      scrollWidth: picker.scrollWidth,
+    });
     setPickerMore((current) =>
-      current.start === start && current.end === end ? current : { start, end },
+      current.start === next.start && current.end === next.end ? current : next,
     );
   }, []);
 
@@ -460,12 +421,7 @@ function Showroom({
 
         <div className="stage-intro">
           <h1 id="showroom-title">Performance car rentals in Cupertino</h1>
-          <p>
-            {capitalize(carCount(readyCount))} run by their owner
-            {arrivingCount > 0 &&
-              `, and ${NUMBER_WORDS[arrivingCount] ?? arrivingCount} more arriving soon`}
-            . Pickup or Bay Area delivery.
-          </p>
+          <p>{showroomIntro()} Pickup or Bay Area delivery.</p>
         </div>
 
         <output className="stage-loading">
@@ -572,7 +528,7 @@ function PhotoGallery({ photos, label }: { photos: Photo[]; label: string }) {
   const go = (next: number) => {
     const track = trackRef.current;
     if (!track) return;
-    const clamped = (next + photos.length) % photos.length;
+    const clamped = wrapGalleryIndex(next, photos.length);
     track.scrollTo({ left: clamped * track.clientWidth, behavior: 'smooth' });
   };
 
@@ -583,7 +539,13 @@ function PhotoGallery({ photos, label }: { photos: Photo[]; label: string }) {
         ref={trackRef}
         onScroll={(event) => {
           const track = event.currentTarget;
-          setIndex(Math.round(track.scrollLeft / track.clientWidth));
+          setIndex(
+            galleryIndexFromScroll(
+              track.scrollLeft,
+              track.clientWidth,
+              photos.length,
+            ),
+          );
         }}
       >
         {photos.map((photo) => (
@@ -883,13 +845,6 @@ function Footer() {
 
 type BookingState = 'idle' | 'submitting' | 'sent';
 
-function todayInLocalTime() {
-  const now = new Date();
-  return new Date(now.getTime() - now.getTimezoneOffset() * 60_000)
-    .toISOString()
-    .slice(0, 10);
-}
-
 function BookingForm({
   vehicle,
   onSelectVehicle,
@@ -908,27 +863,25 @@ function BookingForm({
   const submit = async (event: SyntheticEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const read = (key: string) => {
-      const value = formData.get(key);
-      return typeof value === 'string' ? value.trim() : '';
-    };
-    const start = read('startDate');
-    const end = read('endDate');
-    if (start && end && end <= start) {
-      setError('The return date needs to be after the pickup date.');
+    const start = readFormField(formData, 'startDate');
+    const end = readFormField(formData, 'endDate');
+    const dateError = validateBookingDates(start, end);
+    if (dateError) {
+      setError(dateError);
       return;
     }
-    const payload = {
-      vehicle: `${vehicle.maker} ${vehicle.model}`,
-      vehicleId: vehicle.id,
-      startDate: start,
-      endDate: end,
-      handoff: read('handoff'),
-      name: read('name'),
-      email: read('email'),
-      note: read('note'),
+    const payload = buildBookingPayload({
+      vehicle,
+      fields: {
+        startDate: start,
+        endDate: end,
+        handoff: readFormField(formData, 'handoff'),
+        name: readFormField(formData, 'name'),
+        email: readFormField(formData, 'email'),
+        note: readFormField(formData, 'note'),
+      },
       source: window.location.hostname,
-    };
+    });
     setError('');
     setState('submitting');
     try {
@@ -954,7 +907,7 @@ function BookingForm({
   };
 
   if (state === 'sent') {
-    const firstName = sentTo.name.split(/\s+/)[0];
+    const firstName = greetingFirstName(sentTo.name);
     return (
       <div className="booking-sent">
         <h2 id="booking-title">Request sent</h2>
@@ -992,8 +945,7 @@ function BookingForm({
           >
             {vehicles.map((item) => (
               <option key={item.id} value={item.id}>
-                {item.maker} {item.model}
-                {item.arriving ? ' (soon)' : ''}
+                {bookingOptionLabel(item)}
               </option>
             ))}
           </select>
@@ -1147,21 +1099,12 @@ function BookingDialog({
   );
 }
 
-function getEmbedParentOrigin() {
-  if (
-    typeof window === 'undefined' ||
-    new URLSearchParams(window.location.search).get('embed') !==
-      'squarespace' ||
-    !document.referrer
-  ) {
-    return null;
-  }
-  try {
-    const origin = new URL(document.referrer).origin;
-    return EMBED_ALLOWED_ORIGINS.has(origin) ? origin : null;
-  } catch {
-    return null;
-  }
+function readEmbedParentOrigin() {
+  if (typeof window === 'undefined') return null;
+  return getEmbedParentOrigin({
+    search: window.location.search,
+    referrer: document.referrer,
+  });
 }
 
 export default function Home() {
@@ -1174,16 +1117,23 @@ export default function Home() {
 
   const openBooking = (nextVehicleId?: string) => {
     if (nextVehicleId) setVehicleId(nextVehicleId);
-    const parentOrigin = getEmbedParentOrigin();
-    if (parentOrigin && window.parent !== window) {
+    const parentOrigin = readEmbedParentOrigin();
+    if (
+      shouldDelegateBookingToParent({
+        parentOrigin,
+        isEmbedded: window.parent !== window,
+      }) &&
+      parentOrigin
+    ) {
       const requestId = window.crypto.randomUUID();
       let acknowledged = false;
       const onMessage = (event: MessageEvent) => {
         if (
-          event.origin === parentOrigin &&
-          event.source === window.parent &&
-          event.data?.type === 'jjautos:open-booking:ack' &&
-          event.data?.requestId === requestId
+          isOpenBookingAck(
+            event,
+            { origin: parentOrigin, source: window.parent },
+            requestId,
+          )
         ) {
           acknowledged = true;
           window.removeEventListener('message', onMessage);
@@ -1191,17 +1141,13 @@ export default function Home() {
       };
       window.addEventListener('message', onMessage);
       window.parent.postMessage(
-        {
-          type: 'jjautos:open-booking',
-          vehicleId: nextVehicleId ?? vehicleId,
-          requestId,
-        },
+        createOpenBookingMessage(nextVehicleId ?? vehicleId, requestId),
         parentOrigin,
       );
       window.setTimeout(() => {
         window.removeEventListener('message', onMessage);
         if (!acknowledged) showBooking();
-      }, 1200);
+      }, OPEN_BOOKING_ACK_TIMEOUT_MS);
       return;
     }
     showBooking();

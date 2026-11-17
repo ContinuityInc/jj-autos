@@ -47,10 +47,121 @@ export const MOBILE_CAMERA_DISTANCE = 1.9;
 export const DESKTOP_FOV = 32;
 export const MOBILE_FOV = 42;
 
+export function fieldOfView(small: boolean) {
+  return small ? MOBILE_FOV : DESKTOP_FOV;
+}
+
 const CC_BY = {
   license: 'CC BY 4.0',
   licenseUrl: 'https://creativecommons.org/licenses/by/4.0/',
 };
+
+export function getVehicle(id: string) {
+  return vehicles.find((vehicle) => vehicle.id === id) ?? vehicles[0];
+}
+
+/** Pull the camera back on phones so the whole car stays in frame. */
+export function cameraFor(vehicle: Vehicle, small: boolean) {
+  const { position, target } = vehicle.model3d.camera;
+  if (!small) return { position, target };
+  return {
+    position: position.map(
+      (value, index) =>
+        target[index] + (value - target[index]) * MOBILE_CAMERA_DISTANCE,
+    ),
+    target,
+  };
+}
+
+/**
+ * Next car to warm in the background, walking the catalog from the visible
+ * one. Skips cars already mounted so the visible model never shares bandwidth.
+ */
+export function nextVehicleToPreload(
+  currentId: string,
+  mountedIds: readonly string[],
+  catalog: readonly Pick<Vehicle, 'id'>[] = vehicles,
+) {
+  const start = catalog.findIndex((item) => item.id === currentId);
+  if (start < 0) return null;
+  for (let offset = 1; offset < catalog.length; offset += 1) {
+    const candidate = catalog[(start + offset) % catalog.length];
+    if (!mountedIds.includes(candidate.id)) return candidate.id;
+  }
+  return null;
+}
+
+/** Squarespace already keys bookings on these three ids. */
+export const LEGACY_BOOKING_IDS = ['corvette', 'bmw', 'tesla'] as const;
+
+/** New ids the parent booking form must learn if it maps ids to cars. */
+export const TESLA_FLEET_IDS = [
+  'model-y',
+  'model-y-performance',
+  'model-3',
+  'model-x',
+  'cybertruck',
+] as const;
+
+export const NUMBER_WORDS = [
+  'no',
+  'one',
+  'two',
+  'three',
+  'four',
+  'five',
+  'six',
+  'seven',
+  'eight',
+  'nine',
+  'ten',
+] as const;
+
+export function wordForCount(count: number) {
+  return NUMBER_WORDS[count] ?? String(count);
+}
+
+/** "four cars", "one car". Counts come from the fleet list. */
+export function carCount(count: number) {
+  return `${wordForCount(count)} ${count === 1 ? 'car' : 'cars'}`;
+}
+
+export function capitalize(text: string) {
+  if (!text) return text;
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+export function fleetCounts(
+  catalog: readonly Pick<Vehicle, 'arriving'>[] = vehicles,
+) {
+  const arrivingCount = catalog.filter((vehicle) => vehicle.arriving).length;
+  return {
+    readyCount: catalog.length - arrivingCount,
+    arrivingCount,
+  };
+}
+
+/** Showroom intro, derived from ready vs arriving cars. */
+export function showroomIntro(
+  catalog: readonly Pick<Vehicle, 'arriving'>[] = vehicles,
+) {
+  const { readyCount, arrivingCount } = fleetCounts(catalog);
+  const arrivingBit =
+    arrivingCount > 0
+      ? `, and ${wordForCount(arrivingCount)} more arriving soon`
+      : '';
+  return `${capitalize(carCount(readyCount))} run by their owner${arrivingBit}.`;
+}
+
+/** Two cars can share one 3D model, which is credited once. */
+export function uniqueModelCredits(catalog: readonly Vehicle[] = vehicles) {
+  return catalog
+    .map((vehicle) => vehicle.model3d)
+    .filter(
+      (model, index, all) =>
+        all.findIndex((other) => other.uid === model.uid) === index,
+    );
+}
 
 export const vehicles: Vehicle[] = [
   {

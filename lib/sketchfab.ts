@@ -95,26 +95,65 @@ export function readProgress(value: unknown) {
   return Math.min(1, Math.max(0, raw));
 }
 
-// Background preloading is skipped on small screens and slow or metered
-// connections, where downloading extra car models costs too much.
-export function canPreloadModels() {
-  const connection = (
+export const VIEWER_POST_PROCESSING = { vignetteEnable: false };
+
+export type NetworkConnection = {
+  saveData?: boolean;
+  effectiveType?: string;
+};
+
+function currentConnection(): NetworkConnection | undefined {
+  return (
     navigator as Navigator & {
-      connection?: { saveData?: boolean; effectiveType?: string };
+      connection?: NetworkConnection;
     }
   ).connection;
-  if (connection?.saveData) return false;
-  if (connection?.effectiveType && /2g|3g/.test(connection.effectiveType)) {
-    return false;
-  }
-  return window.matchMedia('(min-width: 768px)').matches;
 }
 
-export function whenIdle(callback: () => void) {
-  if (typeof window.requestIdleCallback === 'function') {
-    const handle = window.requestIdleCallback(callback, { timeout: 2500 });
-    return () => window.cancelIdleCallback(handle);
+// Background preloading is skipped on small screens and slow or metered
+// connections, where downloading extra car models costs too much.
+export function canPreloadModels(
+  runtime: {
+    connection?: NetworkConnection;
+    isDesktop: boolean;
+  } = {
+    connection: currentConnection(),
+    isDesktop: window.matchMedia('(min-width: 768px)').matches,
+  },
+) {
+  if (runtime.connection?.saveData) return false;
+  if (
+    runtime.connection?.effectiveType &&
+    /2g|3g/.test(runtime.connection.effectiveType)
+  ) {
+    return false;
   }
-  const handle = window.setTimeout(callback, 1200);
-  return () => window.clearTimeout(handle);
+  return runtime.isDesktop;
+}
+
+export type IdleRuntime = {
+  requestIdleCallback?: (
+    callback: () => void,
+    options?: { timeout: number },
+  ) => number;
+  cancelIdleCallback?: (handle: number) => void;
+  setTimeout: (callback: () => void, ms: number) => number;
+  clearTimeout: (handle: number) => void;
+};
+
+export function whenIdle(callback: () => void, runtime: IdleRuntime = window) {
+  if (typeof runtime.requestIdleCallback === 'function') {
+    const handle = runtime.requestIdleCallback(callback, { timeout: 2500 });
+    return () => runtime.cancelIdleCallback?.(handle);
+  }
+  const handle = runtime.setTimeout(callback, 1200);
+  return () => runtime.clearTimeout(handle);
+}
+
+/** Phones get smaller textures; reduced-motion visitors get no autospin. */
+export function viewerDeviceOptions(small: boolean, reduceMotion: boolean) {
+  return {
+    autospin: reduceMotion ? 0 : 0.06,
+    max_texture_size: small ? 1024 : 2048,
+  };
 }
