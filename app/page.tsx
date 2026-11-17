@@ -26,6 +26,9 @@ const EMBED_ALLOWED_ORIGINS = new Set([
 // Slow connections can take a while on the first model. The timer restarts
 // whenever Sketchfab reports progress, so this only trips on a stalled load.
 const LOAD_TIMEOUT_MS = 30_000;
+// Each loaded car holds its own WebGL viewer, so only this many stay loaded
+// at once. Showing another car drops the one that was shown longest ago.
+const MAX_LIVE_VIEWERS = 3;
 
 const VIEWER_OPTIONS = {
   autostart: 1,
@@ -50,6 +53,45 @@ type ViewerStatus = 'loading' | 'ready' | 'error';
 
 function getVehicle(id: string) {
   return vehicles.find((vehicle) => vehicle.id === id) ?? vehicles[0];
+}
+
+const NUMBER_WORDS = [
+  'no',
+  'one',
+  'two',
+  'three',
+  'four',
+  'five',
+  'six',
+  'seven',
+  'eight',
+  'nine',
+  'ten',
+];
+
+// "four cars", "one car". The counts come from the fleet list, so the copy
+// stays right when a car is added or an arriving one is delivered.
+function carCount(count: number) {
+  return `${NUMBER_WORDS[count] ?? count} ${count === 1 ? 'car' : 'cars'}`;
+}
+
+function capitalize(text: string) {
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+const readyCount = vehicles.filter((vehicle) => !vehicle.arriving).length;
+const arrivingCount = vehicles.length - readyCount;
+
+// Two cars can share one 3D model, which is credited once.
+const creditedModels = vehicles
+  .map((vehicle) => vehicle.model3d)
+  .filter(
+    (model, index, all) =>
+      all.findIndex((other) => other.uid === model.uid) === index,
+  );
+
+function ArrivingTag() {
+  return <span className="soon">Arriving soon</span>;
 }
 
 function Header({ onBook }: { onBook: () => void }) {
@@ -196,6 +238,9 @@ function ModelViewer({
               const { position, target } = cameraFor(vehicle, small);
               api.setFov(small ? MOBILE_FOV : DESKTOP_FOV);
               api.setCameraLookAt(position, target, 0);
+              // Some models ship with a vignette, which would darken the
+              // edges of the stage and no longer match the still.
+              api.setPostProcessing({ vignetteEnable: false });
               setReady(true);
               onStatus(id, 'ready');
             });
@@ -211,6 +256,9 @@ function ModelViewer({
       window.clearTimeout(timer);
       apiRef.current?.stop();
       apiRef.current = null;
+      // A viewer that is dropped has to load again the next time it shows.
+      onStatus(id, 'loading');
+      onProgress(id, 0);
     };
   }, [onProgress, onStatus, vehicle]);
 
@@ -257,21 +305,34 @@ function Showroom({
   onBook: () => void;
 }) {
   const sectionRef = useRef<HTMLElement>(null);
+  const pickerRef = useRef<HTMLDivElement>(null);
+  // Loaded cars, least recently shown first. The car on show is always last.
   const [mountedIds, setMountedIds] = useState<string[]>(() => [vehicle.id]);
   const [statuses, setStatuses] = useState<Record<string, ViewerStatus>>({});
   const [progress, setProgress] = useState<Record<string, number>>({});
   const [attempts, setAttempts] = useState<Record<string, number>>({});
   const [inView, setInView] = useState(true);
+  // Which edges of the picker have cars scrolled out of view.
+  const [pickerMore, setPickerMore] = useState({ start: false, end: false });
 
-  // A car becomes mounted the first time it is shown and then stays cached.
-  if (!mountedIds.includes(vehicle.id)) {
+  // A car is loaded the first time it is shown and stays cached until
+  // MAX_LIVE_VIEWERS other cars have been shown since.
+  if (mountedIds[mountedIds.length - 1] !== vehicle.id) {
     setMountedIds((ids) =>
-      ids.includes(vehicle.id) ? ids : [...ids, vehicle.id],
+      [...ids.filter((id) => id !== vehicle.id), vehicle.id].slice(
+        -MAX_LIVE_VIEWERS,
+      ),
     );
   }
 
+  // Loading ahead of a click only fills free slots. It never pushes out a
+  // car the visitor has already looked at.
   const mount = useCallback((id: string) => {
-    setMountedIds((ids) => (ids.includes(id) ? ids : [...ids, id]));
+    setMountedIds((ids) =>
+      ids.includes(id) || ids.length >= MAX_LIVE_VIEWERS
+        ? ids
+        : [...ids.slice(0, -1), id, ...ids.slice(-1)],
+    );
   }, []);
   const handleStatus = useCallback((id: string, status: ViewerStatus) => {
     setStatuses((current) =>
@@ -288,9 +349,10 @@ function Showroom({
 
   // Once nothing is downloading, quietly load the next car in line so the
   // picker switches instantly. One at a time, so the visible car never
-  // competes for bandwidth.
+  // competes for bandwidth, and only while there is a free slot.
   const busy = mountedIds.some((id) => (statuses[id] ?? 'loading') === 'loading');
   const nextToPreload = (() => {
+    if (mountedIds.length >= MAX_LIVE_VIEWERS) return null;
     const start = vehicles.findIndex((item) => item.id === vehicle.id);
     for (let offset = 1; offset < vehicles.length; offset += 1) {
       const candidate = vehicles[(start + offset) % vehicles.length];
@@ -314,6 +376,40 @@ function Showroom({
     observer.observe(element);
     return () => observer.disconnect();
   }, []);
+
+  // The picker scrolls sideways when the cars don't fit. Keep the selected
+  // one in view, including when it was chosen from a fleet card.
+  useEffect(() => {
+    const picker = pickerRef.current;
+    const selected = picker?.querySelector<HTMLElement>('.is-selected');
+    if (!picker || !selected) return;
+    const box = picker.getBoundingClientRect();
+    const item = selected.getBoundingClientRect();
+    if (item.left < box.left) {
+      picker.scrollBy({ left: item.left - box.left });
+    } else if (item.right > box.right) {
+      picker.scrollBy({ left: item.right - box.right });
+    }
+  }, [vehicle.id]);
+
+  // An edge with more cars past it fades out, so it is clear the row scrolls.
+  const measurePicker = useCallback(() => {
+    const picker = pickerRef.current;
+    if (!picker) return;
+    const start = picker.scrollLeft > 1;
+    const end = picker.scrollLeft + picker.clientWidth < picker.scrollWidth - 1;
+    setPickerMore((current) =>
+      current.start === start && current.end === end ? current : { start, end },
+    );
+  }, []);
+
+  useEffect(() => {
+    const picker = pickerRef.current;
+    if (!picker || typeof ResizeObserver !== 'function') return;
+    const observer = new ResizeObserver(measurePicker);
+    observer.observe(picker);
+    return () => observer.disconnect();
+  }, [measurePicker]);
 
   const retry = (id: string) => {
     setStatuses((current) => ({ ...current, [id]: 'loading' }));
@@ -364,7 +460,12 @@ function Showroom({
 
         <div className="stage-intro">
           <h1 id="showroom-title">Performance car rentals in Cupertino</h1>
-          <p>Three cars, run by their owner. Pickup or Bay Area delivery.</p>
+          <p>
+            {capitalize(carCount(readyCount))} run by their owner
+            {arrivingCount > 0 &&
+              `, and ${NUMBER_WORDS[arrivingCount] ?? arrivingCount} more arriving soon`}
+            . Pickup or Bay Area delivery.
+          </p>
         </div>
 
         <output className="stage-loading">
@@ -407,7 +508,10 @@ function Showroom({
 
       <div className="showroom-bar">
         <div className="showroom-car" key={vehicle.id}>
-          <p className="showroom-maker">{vehicle.maker}</p>
+          <p className="showroom-maker">
+            {vehicle.maker}
+            {vehicle.arriving && <ArrivingTag />}
+          </p>
           <h2>{vehicle.model}</h2>
           <p className="showroom-summary">{vehicle.summary}</p>
         </div>
@@ -425,27 +529,37 @@ function Showroom({
         </div>
         <fieldset className="picker">
           <legend className="sr-only">Choose a car</legend>
-          {vehicles.map((item) => {
-            const selected = item.id === vehicle.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                aria-pressed={selected}
-                className={selected ? 'is-selected' : undefined}
-                onPointerEnter={() => mount(item.id)}
-                onFocus={() => mount(item.id)}
-                onClick={() => onSelect(item.id)}
-              >
-                <span>{item.maker}</span>
-                {item.shortName}
-              </button>
-            );
-          })}
+          <div
+            className={`picker-row${pickerMore.start ? ' has-more-start' : ''}${pickerMore.end ? ' has-more-end' : ''}`}
+            ref={pickerRef}
+            onScroll={measurePicker}
+          >
+            {vehicles.map((item) => {
+              const selected = item.id === vehicle.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  aria-pressed={selected}
+                  className={selected ? 'is-selected' : undefined}
+                  onPointerEnter={() => mount(item.id)}
+                  onFocus={() => mount(item.id)}
+                  onClick={() => onSelect(item.id)}
+                >
+                  <span>
+                    {item.maker}
+                    {item.arriving && ' · Soon'}
+                  </span>
+                  {item.shortName}
+                </button>
+              );
+            })}
+          </div>
         </fieldset>
       </div>
       <p className="sr-only" aria-live="polite">
-        Showing the {vehicle.maker} {vehicle.model}.
+        Showing the {vehicle.maker} {vehicle.model}
+        {vehicle.arriving && ', arriving soon'}.
       </p>
     </section>
   );
@@ -561,9 +675,11 @@ function Fleet({
       <div className="section-head">
         <h2 id="fleet-title">The fleet</h2>
         <p>
-          Three cars, each owned and maintained by JJ Autos. Rates depend on
-          your dates and whether you need delivery, so every request gets its
-          own quote.
+          JJ Autos owns and maintains every car it rents.{' '}
+          {arrivingCount > 0 &&
+            'The ones marked Arriving soon aren’t here yet, so send a request and we’ll tell you when to expect them. '}
+          Rates depend on your dates and whether you need delivery, so every
+          request gets its own quote.
         </p>
       </div>
       <div className="fleet-grid">
@@ -575,7 +691,10 @@ function Fleet({
             aria-labelledby={`${vehicle.id}-name`}
           >
             <CarMedia vehicle={vehicle} onView3d={onView3d} />
-            <p className="car-maker">{vehicle.maker}</p>
+            <p className="car-maker">
+              {vehicle.maker}
+              {vehicle.arriving && <ArrivingTag />}
+            </p>
             <h3 id={`${vehicle.id}-name`}>{vehicle.model}</h3>
             <p className="car-summary">{vehicle.summary}</p>
             <dl className="car-specs">
@@ -607,9 +726,10 @@ function Fleet({
         ))}
       </div>
       <p className="fine-print">
-        * Manufacturer 0–60 mph figures. Tesla’s subtracts a one-foot rollout.
-        † Requires the Z51 Performance Package. Real-world times depend on
-        conditions, so ask about each car’s exact configuration.
+        * Manufacturer 0–60 mph figures. Tesla’s figures for the Plaid,
+        Performance, and Cyberbeast subtract a one-foot rollout. † Requires the
+        Z51 Performance Package. Range is the EPA estimate. Real-world numbers
+        depend on conditions, so ask about each car’s exact configuration.
       </p>
     </section>
   );
@@ -662,10 +782,9 @@ function About() {
             since 2024.
           </p>
           <p>
-            There are three cars, and the owner and a small team handle every
-            booking, cleaning, service, and delivery themselves. You deal with
-            the same people from your first message until you hand the keys
-            back.
+            The owner and a small team handle every booking, cleaning, service,
+            and delivery themselves. You deal with the same people from your
+            first message until you hand the keys back.
           </p>
           <dl className="facts">
             <div>
@@ -704,7 +823,10 @@ function RequestBand({ onBook }: { onBook: (vehicleId: string) => void }) {
             key={vehicle.id}
             onClick={() => onBook(vehicle.id)}
           >
-            <span>{vehicle.maker}</span>
+            <span>
+              {vehicle.maker}
+              {vehicle.arriving && ' · Arriving soon'}
+            </span>
             <strong>{vehicle.model}</strong>
             <span className="arrow" aria-hidden="true">
               →
@@ -735,13 +857,13 @@ function Footer() {
       <p className="credits">
         3D models are representative and may differ from the rental cars in
         color and options:{' '}
-        {vehicles.map((vehicle, index) => (
-          <span key={vehicle.id}>
-            <a href={vehicle.model3d.source} target="_blank" rel="noreferrer">
-              {vehicle.model3d.title}
+        {creditedModels.map((model, index) => (
+          <span key={model.uid}>
+            <a href={model.source} target="_blank" rel="noreferrer">
+              {model.title}
             </a>{' '}
-            by {vehicle.model3d.author}
-            {index < vehicles.length - 1 ? ', ' : ''}
+            by {model.author}
+            {index < creditedModels.length - 1 ? ', ' : ''}
           </span>
         ))}
         , all{' '}
@@ -861,20 +983,27 @@ function BookingForm({
         We’ll email you with availability and a quote. Nothing is charged here.
       </p>
       <form onSubmit={submit} aria-busy={submitting}>
-        <fieldset className="car-choice" disabled={submitting}>
-          <legend>Car</legend>
-          {vehicles.map((item) => (
-            <button
-              type="button"
-              key={item.id}
-              aria-pressed={item.id === vehicle.id}
-              onClick={() => onSelectVehicle(item.id)}
-            >
-              <span>{item.maker}</span>
-              {item.shortName}
-            </button>
-          ))}
-        </fieldset>
+        <label>
+          Car
+          <select
+            value={vehicle.id}
+            disabled={submitting}
+            onChange={(event) => onSelectVehicle(event.currentTarget.value)}
+          >
+            {vehicles.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.maker} {item.model}
+                {item.arriving ? ' (soon)' : ''}
+              </option>
+            ))}
+          </select>
+        </label>
+        {vehicle.arriving && (
+          <p className="booking-note">
+            The {vehicle.model} hasn’t arrived yet. Send your dates and we’ll
+            tell you when to expect it.
+          </p>
+        )}
         <div className="field-row">
           <label>
             Pickup date
