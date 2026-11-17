@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://jjautos.sanylax.com'),
   title: 'JJ Autos | Performance car rentals in Cupertino',
   description:
-    'Rent a Corvette C8, BMW M4 Competition, or Tesla Model S Plaid from JJ Autos, an owner-run rental business in Cupertino, California. Pickup or Bay Area delivery.',
+    'Rent a Corvette C8, a BMW M4 Competition, or a Tesla from JJ Autos, an owner-run rental business in Cupertino, California. Pickup or Bay Area delivery.',
   icons: { icon: '/favicon.svg' },
   openGraph: {
     title: 'JJ Autos | Performance car rentals in Cupertino',

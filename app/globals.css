@@ -434,6 +434,22 @@ button {
   text-transform: uppercase;
 }
 
+/* "Arriving soon", next to the maker of a car that is not here yet. */
+.soon {
+  display: inline-block;
+  margin-left: 10px;
+  padding: 1px 7px;
+  color: var(--on-dark);
+  border: 1px solid rgb(255 255 255 / 34%);
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 11px;
+  line-height: 1.3;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  vertical-align: 1px;
+}
+
 .showroom-car h2 {
   margin: 4px 0 0;
   font-weight: 650;
@@ -457,17 +473,62 @@ button {
 
 .picker {
   grid-area: picker;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
   min-width: 0;
   margin: 0;
   padding: 0;
   border: 0;
-  border-top: 1px solid var(--line-dark);
+}
+
+/* One row of cars. It shares the width when everything fits and scrolls
+   sideways when it doesn't. */
+.picker-row {
+  display: grid;
+  grid-auto-columns: minmax(132px, 1fr);
+  grid-auto-flow: column;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-behavior: smooth;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  box-shadow: inset 0 1px 0 var(--line-dark);
+}
+
+.picker-row::-webkit-scrollbar {
+  display: none;
+}
+
+/* An edge with more cars past it fades out. */
+.picker-row.has-more-start {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 56px);
+  mask-image: linear-gradient(to right, transparent, #000 56px);
+}
+
+.picker-row.has-more-end {
+  -webkit-mask-image: linear-gradient(to left, transparent, #000 56px);
+  mask-image: linear-gradient(to left, transparent, #000 56px);
+}
+
+.picker-row.has-more-start.has-more-end {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 56px,
+    #000 calc(100% - 56px),
+    transparent
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 56px,
+    #000 calc(100% - 56px),
+    transparent
+  );
 }
 
 .picker button {
-  margin-top: -1px;
+  display: flex;
+  flex-direction: column;
+  scroll-snap-align: start;
   padding: 14px 16px 18px 0;
   color: var(--on-dark-soft);
   background: none;
@@ -500,6 +561,11 @@ button {
 .picker button.is-selected {
   color: var(--on-dark);
   border-top-color: var(--accent);
+}
+
+/* The scrolling row would clip an outline drawn outside the button. */
+.picker button:focus-visible {
+  outline-offset: -2px;
 }
 
 @keyframes rise {
@@ -699,6 +765,11 @@ button {
   text-transform: uppercase;
 }
 
+.car-maker .soon {
+  color: var(--ink);
+  border-color: var(--line-strong);
+}
+
 .car h3 {
   margin: 4px 0 0;
   font-weight: 650;
@@ -882,6 +953,7 @@ button {
 
 .request-band-cars {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
 
@@ -1070,54 +1142,14 @@ button {
   gap: 16px;
 }
 
-.car-choice {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-
-.car-choice legend {
-  margin-bottom: 8px;
-  padding: 0;
-  font-weight: 600;
-  font-size: 14px;
-}
-
-.car-choice button {
+.booking-note {
+  margin: -6px 0 0;
   padding: 10px 12px;
   color: var(--ink);
-  background: #fff;
-  border: 1px solid var(--line-strong);
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 14px;
-  line-height: 1.25;
-  text-align: left;
-  cursor: pointer;
-}
-
-.car-choice button span {
-  display: block;
-  margin-bottom: 2px;
-  color: var(--ink-soft);
-  font-weight: 400;
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.car-choice button:hover {
-  border-color: var(--ink);
-}
-
-.car-choice button[aria-pressed='true'] {
   background: #f6f5f1;
-  border-color: var(--ink);
-  box-shadow: inset 0 0 0 1px var(--ink);
+  border-radius: var(--radius);
+  font-size: 14px;
+  line-height: 1.45;
 }
 
 .booking label {
@@ -1335,13 +1367,9 @@ button {
     padding: 24px 20px 28px;
   }
 
-  .field-row {
+  .field-row,
+  .request-band-cars {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .car-choice button {
-    padding: 9px 10px;
-    font-size: 13px;
   }
 }
 
@@ -1352,7 +1380,8 @@ button {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html {
+  html,
+  .picker-row {
     scroll-behavior: auto;
   }
 

@@ -16,6 +16,11 @@ export type Vehicle = {
   summary: string;
   description: string;
   specs: Array<{ value: string; label: string }>;
+  /**
+   * The car is not in the fleet yet. It is listed with an "Arriving soon"
+   * tag and still takes date requests. Remove this once the car is here.
+   */
+  arriving?: boolean;
   /** Real photos of the car. Shown in its fleet card when present. */
   photos?: Photo[];
   model3d: {
@@ -131,7 +136,7 @@ export const vehicles: Vehicle[] = [
     shortName: 'Model S Plaid',
     summary: '1,020 hp tri-motor, all-wheel drive',
     description:
-      'Three electric motors and all-wheel drive add up to 1,020 hp. It seats five and runs silently, which makes it the most practical of the three.',
+      'Three electric motors and all-wheel drive add up to 1,020 hp. It seats five and runs silently, and ours is white.',
     specs: [
       { value: '1,020 hp', label: 'Power' },
       { value: '1.99 s*', label: '0–60 mph' },
@@ -153,6 +158,172 @@ export const vehicles: Vehicle[] = [
         src: '/cars/tesla-3d',
         widthRatio: 0.7903,
         heightRatio: 0.9472,
+      },
+    },
+  },
+  {
+    id: 'model-y',
+    maker: 'Tesla',
+    model: 'Model Y Long Range',
+    shortName: 'Model Y',
+    summary: 'Dual-motor all-wheel drive, 327 miles of range',
+    description:
+      'The everyday one. Two motors drive all four wheels, the hatch swallows luggage for five, and a full charge is rated at 327 miles. Ours is black.',
+    specs: [
+      { value: '327 mi', label: 'EPA range' },
+      { value: '4.6 s*', label: '0–60 mph' },
+      { value: 'AWD', label: 'Drive' },
+      { value: '5', label: 'Seats' },
+    ],
+    model3d: {
+      uid: '59e2ead369984b1a85c800ff6cf6789d',
+      title: '2021 Tesla Model Y',
+      author: 'tonielpro520',
+      source:
+        'https://sketchfab.com/3d-models/2021-tesla-model-y-59e2ead369984b1a85c800ff6cf6789d',
+      ...CC_BY,
+      camera: {
+        position: [-5.245, -3.678, 1.614],
+        target: [0.003, -0.004, 0.827],
+      },
+      poster: {
+        src: '/cars/model-y-3d',
+        widthRatio: 0.5881,
+        heightRatio: 0.7433,
+      },
+    },
+  },
+  {
+    // Same 3D model as the Long Range, seen from the other side so the two
+    // read as different cars in the showroom.
+    id: 'model-y-performance',
+    maker: 'Tesla',
+    model: 'Model Y Performance',
+    shortName: 'Model Y Performance',
+    summary: '460 hp dual-motor, all-wheel drive',
+    description:
+      'The quick Model Y: 460 hp through all four wheels, with the same five seats and hatch as the Long Range. Ours is on order in dark gray.',
+    specs: [
+      { value: '460 hp', label: 'Power' },
+      { value: '3.3 s*', label: '0–60 mph' },
+      { value: 'AWD', label: 'Drive' },
+      { value: '5', label: 'Seats' },
+    ],
+    arriving: true,
+    model3d: {
+      uid: '59e2ead369984b1a85c800ff6cf6789d',
+      title: '2021 Tesla Model Y',
+      author: 'tonielpro520',
+      source:
+        'https://sketchfab.com/3d-models/2021-tesla-model-y-59e2ead369984b1a85c800ff6cf6789d',
+      ...CC_BY,
+      camera: {
+        position: [4.958, -4.087, 1.614],
+        target: [-0.289, -0.413, 0.827],
+      },
+      poster: {
+        src: '/cars/model-y-performance-3d',
+        widthRatio: 0.5719,
+        heightRatio: 0.7433,
+      },
+    },
+  },
+  {
+    id: 'model-3',
+    maker: 'Tesla',
+    model: 'Model 3 Performance',
+    shortName: 'Model 3 Performance',
+    summary: '510 hp dual-motor, all-wheel drive',
+    description:
+      'Tesla’s compact sport sedan: 510 hp, all-wheel drive, and room for five.',
+    specs: [
+      { value: '510 hp', label: 'Power' },
+      { value: '2.9 s*', label: '0–60 mph' },
+      { value: 'AWD', label: 'Drive' },
+      { value: '5', label: 'Seats' },
+    ],
+    arriving: true,
+    model3d: {
+      uid: '36c52f3f89f6439c90310f14e8ff33f2',
+      title: 'Tesla model 3 2024',
+      author: 'brandonleong28',
+      source:
+        'https://sketchfab.com/3d-models/tesla-model-3-2024-36c52f3f89f6439c90310f14e8ff33f2',
+      ...CC_BY,
+      camera: {
+        position: [9.491, -27.205, 5.343],
+        target: [-5.108, -9.807, 2.555],
+      },
+      poster: {
+        src: '/cars/model-3-3d',
+        widthRatio: 0.5923,
+        heightRatio: 0.705,
+      },
+    },
+  },
+  {
+    id: 'model-x',
+    maker: 'Tesla',
+    model: 'Model X Plaid',
+    shortName: 'Model X Plaid',
+    summary: '1,020 hp tri-motor, all-wheel drive',
+    description:
+      'The Model S Plaid’s three motors and 1,020 hp in an SUV, with falcon-wing rear doors and six seats.',
+    specs: [
+      { value: '1,020 hp', label: 'Power' },
+      { value: '2.5 s*', label: '0–60 mph' },
+      { value: 'AWD', label: 'Drive' },
+      { value: '6', label: 'Seats' },
+    ],
+    arriving: true,
+    model3d: {
+      uid: 'b69c8d8f607e4822b93eaf277bd36588',
+      title: 'TESLA MODEL X (Part 1)',
+      author: 'Number1FanGuy98',
+      source:
+        'https://sketchfab.com/3d-models/tesla-model-x-part-1-b69c8d8f607e4822b93eaf277bd36588',
+      ...CC_BY,
+      camera: {
+        position: [-186.14, -98.5, 63.91],
+        target: [39.52, 59.51, 30.08],
+      },
+      poster: {
+        src: '/cars/model-x-3d',
+        widthRatio: 0.7165,
+        heightRatio: 0.7633,
+      },
+    },
+  },
+  {
+    id: 'cybertruck',
+    maker: 'Tesla',
+    model: 'Cybertruck Cyberbeast',
+    shortName: 'Cyberbeast',
+    summary: '845 hp tri-motor, all-wheel drive',
+    description:
+      'The three-motor Cybertruck: 845 hp, all-wheel drive, a stainless-steel body, and a six-foot bed. It seats five.',
+    specs: [
+      { value: '845 hp', label: 'Power' },
+      { value: '2.6 s*', label: '0–60 mph' },
+      { value: 'AWD', label: 'Drive' },
+      { value: '5', label: 'Seats' },
+    ],
+    arriving: true,
+    model3d: {
+      uid: '8950fc178e254c9198b2a8555ef1590a',
+      title: 'Tesla Cybertruck',
+      author: 'TAIGA-ZOE',
+      source:
+        'https://sketchfab.com/3d-models/tesla-cybertruck-8950fc178e254c9198b2a8555ef1590a',
+      ...CC_BY,
+      camera: {
+        position: [-225.5, 335.22, 35.77],
+        target: [8.32, 1.28, -14.28],
+      },
+      poster: {
+        src: '/cars/cybertruck-3d',
+        widthRatio: 0.7319,
+        heightRatio: 0.885,
       },
     },
   },

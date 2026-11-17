@@ -18,6 +18,7 @@ export type ViewerApi = {
     duration: number,
   ) => void;
   setFov: (value: number) => void;
+  setPostProcessing: (settings: Record<string, unknown>) => void;
   start: () => void;
   stop: () => void;
 };
@@ -95,7 +96,7 @@ export function readProgress(value: unknown) {
 }
 
 // Background preloading is skipped on small screens and slow or metered
-// connections, where downloading two extra car models costs too much.
+// connections, where downloading extra car models costs too much.
 export function canPreloadModels() {
   const connection = (
     navigator as Navigator & {
