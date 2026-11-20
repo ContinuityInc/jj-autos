@@ -18,7 +18,9 @@ import {
 } from '@/lib/booking';
 import { galleryIndexFromScroll, wrapGalleryIndex } from '@/lib/gallery';
 import {
+  LOAD_TIMEOUT_MS,
   SKETCHFAB_VERSION,
+  VIEWER_OPTIONS,
   VIEWER_POST_PROCESSING,
   canPreloadModels,
   loadSketchfab,
@@ -28,11 +30,18 @@ import {
   type ViewerApi,
 } from '@/lib/sketchfab';
 import {
+  bumpViewerAttempt,
+  canStartBackgroundPreload,
+  mergeViewerStatus,
   nextVehicleToPreloadIfRoom,
   pickerOverflowEdges,
   pickerScrollDelta,
   preloadViewer,
   rememberShownVehicle,
+  resetViewerProgress,
+  viewerInstanceKey,
+  viewerIsBusy,
+  type ViewerStatus,
 } from '@/lib/showroom';
 import {
   cameraFor,
@@ -45,31 +54,6 @@ import {
   type Photo,
   type Vehicle,
 } from '@/lib/vehicles';
-// Slow connections can take a while on the first model. The timer restarts
-// whenever Sketchfab reports progress, so this only trips on a stalled load.
-const LOAD_TIMEOUT_MS = 30_000;
-
-const VIEWER_OPTIONS = {
-  autostart: 1,
-  camera: 0,
-  dnt: 1,
-  preload: 0,
-  scrollwheel: 0,
-  transparent: 1,
-  ui_annotations: 0,
-  ui_controls: 1,
-  ui_fullscreen: 1,
-  ui_help: 1,
-  ui_hint: 0,
-  ui_infos: 1,
-  ui_inspector: 0,
-  ui_settings: 1,
-  ui_stop: 0,
-  ui_vr: 0,
-};
-
-type ViewerStatus = 'loading' | 'ready' | 'error';
-
 const { arrivingCount } = fleetCounts();
 const creditedModels = uniqueModelCredits();
 
@@ -226,7 +210,7 @@ function ModelViewer({
       window.clearTimeout(timer);
       apiRef.current?.stop();
       apiRef.current = null;
-      // A viewer that is dropped has to load again the next time it shows.
+      // A dropped viewer has to load again the next time it shows.
       onStatus(id, 'loading');
       onProgress(id, 0);
     };
@@ -297,9 +281,7 @@ function Showroom({
     setMountedIds((ids) => preloadViewer(ids, id));
   }, []);
   const handleStatus = useCallback((id: string, status: ViewerStatus) => {
-    setStatuses((current) =>
-      current[id] === status ? current : { ...current, [id]: status },
-    );
+    setStatuses((current) => mergeViewerStatus(current, id, status));
   }, []);
   const handleProgress = useCallback((id: string, value: number) => {
     setProgress((current) => ({ ...current, [id]: value }));
@@ -312,15 +294,23 @@ function Showroom({
   // Once nothing is downloading, quietly load the next car in line so the
   // picker switches instantly. One at a time, so the visible car never
   // competes for bandwidth, and only while there is a free slot.
-  const busy = mountedIds.some(
-    (id) => (statuses[id] ?? 'loading') === 'loading',
-  );
+  const busy = viewerIsBusy(mountedIds, statuses);
   const nextToPreload = nextVehicleToPreloadIfRoom(vehicle.id, mountedIds);
 
   useEffect(() => {
-    if (busy || !nextToPreload || activeStatus !== 'ready') return;
-    if (!canPreloadModels()) return;
-    return whenIdle(() => mount(nextToPreload));
+    if (
+      !canStartBackgroundPreload({
+        busy,
+        nextId: nextToPreload,
+        activeStatus,
+        allowed: canPreloadModels(),
+      }) ||
+      !nextToPreload
+    ) {
+      return;
+    }
+    const preloadId = nextToPreload;
+    return whenIdle(() => mount(preloadId));
   }, [activeStatus, busy, mount, nextToPreload]);
 
   useEffect(() => {
@@ -373,9 +363,9 @@ function Showroom({
   }, [measurePicker]);
 
   const retry = (id: string) => {
-    setStatuses((current) => ({ ...current, [id]: 'loading' }));
-    setProgress((current) => ({ ...current, [id]: 0 }));
-    setAttempts((current) => ({ ...current, [id]: (current[id] ?? 0) + 1 }));
+    setStatuses((current) => mergeViewerStatus(current, id, 'loading'));
+    setProgress((current) => resetViewerProgress(current, id));
+    setAttempts((current) => bumpViewerAttempt(current, id));
   };
 
   const credit = vehicle.model3d;
@@ -410,7 +400,7 @@ function Showroom({
           .filter((item) => mountedIds.includes(item.id))
           .map((item) => (
             <ModelViewer
-              key={`${item.id}-${attempts[item.id] ?? 0}`}
+              key={viewerInstanceKey(item.id, attempts)}
               vehicle={item}
               active={item.id === vehicle.id}
               running={item.id === vehicle.id && inView}

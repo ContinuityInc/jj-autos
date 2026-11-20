@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  LOAD_TIMEOUT_MS,
   SKETCHFAB_SCRIPT,
   SKETCHFAB_VERSION,
+  VIEWER_OPTIONS,
   VIEWER_POST_PROCESSING,
   canPreloadModels,
   readProgress,
@@ -118,6 +120,21 @@ describe('SKETCHFAB_SCRIPT', () => {
 describe('VIEWER_POST_PROCESSING', () => {
   it('turns the vignette off so every model matches its still', () => {
     expect(VIEWER_POST_PROCESSING).toEqual({ vignetteEnable: false });
+  });
+});
+
+describe('VIEWER_OPTIONS', () => {
+  it('keeps a transparent stage and the catalog camera so stills line up', () => {
+    expect(VIEWER_OPTIONS.transparent).toBe(1);
+    expect(VIEWER_OPTIONS.camera).toBe(0);
+    expect(VIEWER_OPTIONS.autostart).toBe(1);
+    expect(VIEWER_OPTIONS.preload).toBe(0);
+  });
+});
+
+describe('LOAD_TIMEOUT_MS', () => {
+  it('gives a stalled first model 30s before the still-and-retry fallback', () => {
+    expect(LOAD_TIMEOUT_MS).toBe(30_000);
   });
 });
 

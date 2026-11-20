@@ -101,6 +101,33 @@ describe('buildBookingPayload', () => {
     expect(payload.vehicleId).toBe('cybertruck');
     expect(payload.vehicle).toBe('Tesla Cybertruck Cyberbeast');
   });
+
+  it('sends the new Tesla ids the Squarespace parent has to learn', () => {
+    const fields = {
+      startDate: '2026-12-20',
+      endDate: '2026-12-22',
+      handoff: 'Cupertino pickup',
+      name: 'Alex Rivera',
+      email: 'alex@example.com',
+      note: '',
+    };
+    expect(
+      ['model-y', 'model-y-performance', 'model-3', 'model-x', 'cybertruck'].map(
+        (id) =>
+          buildBookingPayload({
+            vehicle: getVehicle(id),
+            fields,
+            source: 'jjautos.sanylax.com',
+          }).vehicleId,
+      ),
+    ).toEqual([
+      'model-y',
+      'model-y-performance',
+      'model-3',
+      'model-x',
+      'cybertruck',
+    ]);
+  });
 });
 
 describe('bookingOptionLabel', () => {

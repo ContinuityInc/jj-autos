@@ -1,6 +1,29 @@
 export const SKETCHFAB_VERSION = '1.12.1';
 export const SKETCHFAB_SCRIPT = `https://static.sketchfab.com/api/sketchfab-viewer-${SKETCHFAB_VERSION}.js`;
 
+// Slow connections can take a while on the first model. The timer restarts
+// whenever Sketchfab reports progress, so this only trips on a stalled load.
+export const LOAD_TIMEOUT_MS = 30_000;
+
+export const VIEWER_OPTIONS = {
+  autostart: 1,
+  camera: 0,
+  dnt: 1,
+  preload: 0,
+  scrollwheel: 0,
+  transparent: 1,
+  ui_annotations: 0,
+  ui_controls: 1,
+  ui_fullscreen: 1,
+  ui_help: 1,
+  ui_hint: 0,
+  ui_infos: 1,
+  ui_inspector: 0,
+  ui_settings: 1,
+  ui_stop: 0,
+  ui_vr: 0,
+};
+
 export type Camera = { position: number[]; target: number[] };
 
 export type ViewerApi = {

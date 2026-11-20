@@ -78,3 +78,90 @@ export function pickerScrollDelta({
   if (itemRight > pickerRight) return itemRight - pickerRight;
   return 0;
 }
+
+export type ViewerStatus = 'loading' | 'ready' | 'error';
+
+/** Hidden cars still count as busy until their first load finishes. */
+export function viewerIsBusy(
+  mountedIds: readonly string[],
+  statuses: Readonly<Record<string, ViewerStatus | undefined>>,
+) {
+  return mountedIds.some((id) => (statuses[id] ?? 'loading') === 'loading');
+}
+
+export function mergeViewerStatus(
+  current: Readonly<Record<string, ViewerStatus>>,
+  id: string,
+  status: ViewerStatus,
+): Record<string, ViewerStatus> {
+  if (current[id] === status) return current as Record<string, ViewerStatus>;
+  return { ...current, [id]: status };
+}
+
+/**
+ * A dropped viewer must look unloaded the next time it shows, so the still
+ * covers the reload instead of a stale "ready" or half-finished bar.
+ */
+export function dropViewerState(
+  statuses: Readonly<Record<string, ViewerStatus>>,
+  progress: Readonly<Record<string, number>>,
+  id: string,
+) {
+  return {
+    statuses: mergeViewerStatus(statuses, id, 'loading'),
+    progress: resetViewerProgress(progress, id),
+  };
+}
+
+export function resetViewerProgress(
+  progress: Readonly<Record<string, number>>,
+  id: string,
+) {
+  return { ...progress, [id]: 0 };
+}
+
+export function bumpViewerAttempt(
+  attempts: Readonly<Record<string, number>>,
+  id: string,
+) {
+  return { ...attempts, [id]: (attempts[id] ?? 0) + 1 };
+}
+
+/**
+ * "Try again" remounts the iframe. Bumping attempts changes the React key so
+ * the previous Sketchfab instance cannot keep calling into a dead viewer.
+ */
+export function retryViewer(
+  statuses: Readonly<Record<string, ViewerStatus>>,
+  progress: Readonly<Record<string, number>>,
+  attempts: Readonly<Record<string, number>>,
+  id: string,
+) {
+  return {
+    statuses: mergeViewerStatus(statuses, id, 'loading'),
+    progress: resetViewerProgress(progress, id),
+    attempts: bumpViewerAttempt(attempts, id),
+  };
+}
+
+export function viewerInstanceKey(
+  id: string,
+  attempts: Readonly<Record<string, number>>,
+) {
+  return `${id}-${attempts[id] ?? 0}`;
+}
+
+/** Never start a background download while the visible car is still loading. */
+export function canStartBackgroundPreload({
+  busy,
+  nextId,
+  activeStatus,
+  allowed,
+}: {
+  busy: boolean;
+  nextId: string | null;
+  activeStatus: ViewerStatus;
+  allowed: boolean;
+}) {
+  return !busy && nextId !== null && activeStatus === 'ready' && allowed;
+}

@@ -1,12 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import {
   MAX_LIVE_VIEWERS,
+  bumpViewerAttempt,
+  canStartBackgroundPreload,
+  dropViewerState,
+  mergeViewerStatus,
   nextVehicleToPreloadIfRoom,
   pickerOverflowEdges,
   pickerScrollDelta,
   preloadViewer,
   rememberShownVehicle,
+  resetViewerProgress,
+  retryViewer,
+  viewerInstanceKey,
+  viewerIsBusy,
 } from '@/lib/showroom';
+import { TESLA_FLEET_IDS, vehicles } from '@/lib/vehicles';
 
 describe('rememberShownVehicle', () => {
   it('moves the visible car to the end without duplicating it', () => {
@@ -28,6 +37,27 @@ describe('rememberShownVehicle', () => {
   it('leaves the list unchanged when the visible car is already last', () => {
     const mounted = ['bmw', 'tesla'];
     expect(rememberShownVehicle(mounted, 'tesla')).toBe(mounted);
+  });
+
+  it('moves a cached middle car to the end without growing the list', () => {
+    expect(rememberShownVehicle(['corvette', 'bmw', 'tesla'], 'bmw')).toEqual([
+      'corvette',
+      'tesla',
+      'bmw',
+    ]);
+  });
+
+  it('treats a previously dropped car as a fresh load when it is shown again', () => {
+    const afterFourth = rememberShownVehicle(
+      ['corvette', 'bmw', 'tesla'],
+      'model-y',
+    );
+    expect(afterFourth).toEqual(['bmw', 'tesla', 'model-y']);
+    expect(rememberShownVehicle(afterFourth, 'corvette')).toEqual([
+      'tesla',
+      'model-y',
+      'corvette',
+    ]);
   });
 });
 
@@ -67,6 +97,20 @@ describe('nextVehicleToPreloadIfRoom', () => {
       nextVehicleToPreloadIfRoom('tesla', ['corvette', 'bmw', 'tesla']),
     ).toBeNull();
   });
+
+  it('still walks the eight-car catalog when a viewer slot is free', () => {
+    expect(
+      nextVehicleToPreloadIfRoom('tesla', ['corvette', 'tesla'], 3, vehicles),
+    ).toBe('model-y');
+    expect(
+      nextVehicleToPreloadIfRoom(
+        TESLA_FLEET_IDS[TESLA_FLEET_IDS.length - 1],
+        [TESLA_FLEET_IDS[TESLA_FLEET_IDS.length - 1]],
+        3,
+        vehicles,
+      ),
+    ).toBe('corvette');
+  });
 });
 
 describe('pickerOverflowEdges', () => {
@@ -98,6 +142,16 @@ describe('pickerOverflowEdges', () => {
         scrollWidth: 800,
       }),
     ).toEqual({ start: true, end: true });
+  });
+
+  it('fades only the start when the row is scrolled to the last car', () => {
+    expect(
+      pickerOverflowEdges({
+        scrollLeft: 400,
+        clientWidth: 400,
+        scrollWidth: 800,
+      }),
+    ).toEqual({ start: true, end: false });
   });
 });
 
@@ -133,5 +187,102 @@ describe('pickerScrollDelta', () => {
         itemRight: 300,
       }),
     ).toBe(0);
+  });
+});
+
+describe('viewer cache status', () => {
+  it('treats a newly mounted car as busy until Sketchfab reports ready', () => {
+    expect(viewerIsBusy(['corvette', 'bmw'], { corvette: 'ready' })).toBe(true);
+    expect(
+      viewerIsBusy(['corvette', 'bmw'], { corvette: 'ready', bmw: 'ready' }),
+    ).toBe(false);
+  });
+
+  it('keeps an erroring car from blocking background preload', () => {
+    expect(
+      viewerIsBusy(['corvette', 'bmw'], { corvette: 'ready', bmw: 'error' }),
+    ).toBe(false);
+  });
+
+  it('skips a status update that would rerender with the same value', () => {
+    const current = { tesla: 'ready' as const };
+    expect(mergeViewerStatus(current, 'tesla', 'ready')).toBe(current);
+    expect(mergeViewerStatus(current, 'tesla', 'error')).toEqual({
+      tesla: 'error',
+    });
+  });
+
+  it('resets a dropped viewer so it reloads from its still', () => {
+    expect(
+      dropViewerState(
+        { corvette: 'ready', bmw: 'ready' },
+        { corvette: 1, bmw: 0.4 },
+        'bmw',
+      ),
+    ).toEqual({
+      statuses: { corvette: 'ready', bmw: 'loading' },
+      progress: { corvette: 1, bmw: 0 },
+    });
+  });
+
+  it('remounts a failed viewer on retry so the old iframe cannot keep calling back', () => {
+    const retried = retryViewer(
+      { tesla: 'error' },
+      { tesla: 0.2 },
+      { tesla: 0 },
+      'tesla',
+    );
+    expect(retried).toEqual({
+      statuses: { tesla: 'loading' },
+      progress: { tesla: 0 },
+      attempts: { tesla: 1 },
+    });
+    expect(viewerInstanceKey('tesla', retried.attempts)).toBe('tesla-1');
+    expect(viewerInstanceKey('tesla', {})).toBe('tesla-0');
+    expect(bumpViewerAttempt(retried.attempts, 'tesla')).toEqual({ tesla: 2 });
+    expect(resetViewerProgress(retried.progress, 'tesla')).toEqual({ tesla: 0 });
+  });
+
+  it('starts a background download only when the visible car is ready and a slot is free', () => {
+    expect(
+      canStartBackgroundPreload({
+        busy: false,
+        nextId: 'model-y',
+        activeStatus: 'ready',
+        allowed: true,
+      }),
+    ).toBe(true);
+    expect(
+      canStartBackgroundPreload({
+        busy: true,
+        nextId: 'model-y',
+        activeStatus: 'ready',
+        allowed: true,
+      }),
+    ).toBe(false);
+    expect(
+      canStartBackgroundPreload({
+        busy: false,
+        nextId: 'model-y',
+        activeStatus: 'loading',
+        allowed: true,
+      }),
+    ).toBe(false);
+    expect(
+      canStartBackgroundPreload({
+        busy: false,
+        nextId: null,
+        activeStatus: 'ready',
+        allowed: true,
+      }),
+    ).toBe(false);
+    expect(
+      canStartBackgroundPreload({
+        busy: false,
+        nextId: 'model-y',
+        activeStatus: 'ready',
+        allowed: false,
+      }),
+    ).toBe(false);
   });
 });

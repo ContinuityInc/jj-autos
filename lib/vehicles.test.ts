@@ -132,6 +132,26 @@ describe('fleet copy', () => {
       'Two cars run by their owner.',
     );
   });
+
+  it('keeps arriving copy even if every listed car is still on order', () => {
+    expect(showroomIntro([{ arriving: true }, { arriving: true }])).toBe(
+      'No cars run by their owner, and two more arriving soon.',
+    );
+  });
+
+  it('credits a shared Sketchfab model once, in catalog order', () => {
+    const modelY = getVehicle('model-y').model3d;
+    const credits = uniqueModelCredits([
+      getVehicle('model-y'),
+      getVehicle('model-y-performance'),
+      getVehicle('model-3'),
+    ]);
+    expect(credits.map((model) => model.uid)).toEqual([
+      modelY.uid,
+      getVehicle('model-3').model3d.uid,
+    ]);
+    expect(credits[0]).toBe(modelY);
+  });
 });
 
 describe('fieldOfView', () => {
